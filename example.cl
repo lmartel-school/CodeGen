@@ -4,6 +4,11 @@
  *)
 
 class Main {
-  main():Int { 0 };
+  foo : Int <- 5;
+  main():Int { case foo of myInt : Int => 1;
+  			   			   myBool : Bool => 2;
+						   myObject : Object => 3;
+			   esac
+			 };
 };
 
