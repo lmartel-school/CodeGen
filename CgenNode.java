@@ -59,6 +59,9 @@ class CgenNode extends class_ {
     /** Vector of the class' methods, including inherited ones **/
     private Vector<MethodPair> methods;
 
+    /** Vector of the class' attributes, including inherited ones **/
+    private Vector<attr> attrs;
+
     /** Constructs a new CgenNode to represent class "c".
      * @param c the class
      * @param basic_status is this class basic or not
@@ -69,6 +72,7 @@ class CgenNode extends class_ {
 	this.parent = null;
 	this.children = new Vector<CgenNode>();
 	this.basic_status = basic_status;
+    this.tag = -1;
 	AbstractTable.stringtable.addString(name.getString());
     }
 
@@ -112,10 +116,16 @@ class CgenNode extends class_ {
     }
 
     void setClassTag(int tag){
+        if(this.tag != -1){
+            Utilities.fatalError("class tag already set to " + this.tag + " in CgenNode.setClassTag");
+        }
         this.tag = tag;
     }
 
     int getClassTag(){
+        if(tag == -1){
+            Utilities.fatalError("class tag not yet set in CgenNode.getClassTag");
+        }
         return tag;
     }
 
@@ -128,7 +138,7 @@ class CgenNode extends class_ {
 
     //returns a list of class,method pairs with overridden methods filtered out.
     Vector<MethodPair> getMethods(){
-        if(methods != null){
+        if(methods == null){
             Utilities.fatalError("methods list not yet set in CgenNode.getMethods");
         }
         Vector<MethodPair> filteredMethods = new Vector<MethodPair>(methods);
@@ -140,6 +150,21 @@ class CgenNode extends class_ {
             usedNames.add(nextName);
         }
         return filteredMethods;
+    }
+
+    void setAttrs(Vector<attr> attrs){
+        if(this.attrs != null){
+            Utilities.fatalError("attrs list already set in CgenNode.setAttrs");
+        }
+        this.attrs = attrs;
+    }
+
+    //no filtering since attrs cannot be overridden
+    Vector<attr> getAttrs(){
+        if(attrs == null){
+            Utilities.fatalError("attrs list not yet set in CgenNode.getAttrs");
+        }
+        return attrs;
     }
 
 }

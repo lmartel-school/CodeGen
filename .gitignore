@@ -1,5 +1,14 @@
+# ignore eclipse files
 .classpath
 .project
 bin
 java-cup-11a.jar
-src
+
+# ignore class files and the executable so we don't have to make clean before submit
+*.class
+cgen
+
+# ignore symbol files to avoid confusion -- just re-run the tests
+*.s
+
+#note that we are NOT ignoring src, since I (temporarily) changed a few things (see README)

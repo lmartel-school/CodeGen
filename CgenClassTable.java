@@ -373,25 +373,30 @@ class CgenClassTable extends SymbolTable {
 			parent.addChild(nd);
     }
 
-    private void installMethods(){
+    private void installFeatures(){
     	CgenNode object = root();
-    	installMethodsInner(new Vector<MethodPair>(), object);
+    	installFeaturesInner(new Vector<MethodPair>(), new Vector<attr>(), object);
     }
 
     //installs a list of available methods in each node, paired with the class they're associated with.
     //this includes all inherited methods.
-    private void installMethodsInner(Vector<MethodPair> inherited, CgenNode node){
-	  	Vector<MethodPair> methods = new Vector<MethodPair>(inherited);
+    private void installFeaturesInner(Vector<MethodPair> inheritedMethods, Vector<attr> inheritedAttrs, CgenNode node){
+	  	Vector<MethodPair> methods = new Vector<MethodPair>(inheritedMethods);
+      Vector<attr> attrs = new Vector<attr>(inheritedAttrs);
 	    for (Enumeration e = node.getFeatures().getElements(); e.hasMoreElements(); ) {
 	    	Feature feat = (Feature) e.nextElement();
 	    	if(feat instanceof method){
 	    		method cur = (method) feat;
 	    		methods.add(new MethodPair(node, cur));
-	    	}
+	    	} else if(feat instanceof attr){
+          attr cur = (attr) feat;
+          attrs.add(cur);
+        }
 	    }
 	    node.setMethods(methods);
+      node.setAttrs(attrs);
 	    for(CgenNode child : (ArrayList<CgenNode>) Collections.list(node.getChildren())){
-	    	installMethodsInner(methods, child);
+	    	installFeaturesInner(methods, attrs, child);
 	    }
     }
 
@@ -431,11 +436,35 @@ class CgenClassTable extends SymbolTable {
     	}
     }
 
+    private void codeAttr(attr a){
+      str.print(CgenSupport.WORD);
+      AbstractSymbol klass = a.type_decl;
+      if(klass == TreeConstants.Int){
+        ((IntSymbol) AbstractTable.inttable.lookup("0")).codeRef(str);
+      } else if (klass == TreeConstants.Bool){
+        BoolConst.falsebool.codeRef(str);
+      } else if (klass == TreeConstants.Str){
+        ((StringSymbol) AbstractTable.stringtable.lookup("")).codeRef(str);
+      } else {
+        str.print(0); // void
+      }
+      str.println();
+    }
+
     private void codeProtObj(CgenNode klass){
     	str.println(CgenSupport.WORD + "-1");
     	CgenSupport.emitProtObjRef(klass.name, str);
     	str.print(CgenSupport.LABEL);
-    	//str.println 
+    	str.println(CgenSupport.WORD + klass.getClassTag());
+      Vector<attr> attrs = klass.getAttrs();
+      int objSize = 3 + attrs.size();
+      str.println(CgenSupport.WORD + objSize);
+      str.print(CgenSupport.WORD);
+      CgenSupport.emitDispTableRef(klass.name, str);
+      str.println();
+      for(attr a : attrs){
+        codeAttr(a);
+      }
     }
 
     private void codeProtObjs() {
@@ -461,7 +490,7 @@ class CgenClassTable extends SymbolTable {
 			installClasses(cls);
 			buildInheritanceTree();
 
-			installMethods();
+			installFeatures();
 
 			code();
 
@@ -481,9 +510,9 @@ class CgenClassTable extends SymbolTable {
 			codeConstants();
 
 			//                 Add your code to emit
-			//                   - prototype objects
-			//                   - class_nameTab
-			//                   - dispatch tables
+			//                   - prototype objects (check)
+			//                   - class_nameTab (check)
+			//                   - dispatch tables (check)
 
 			//is there a better way to get the str_const[Object] value?
 			codeClassNameTab(5);

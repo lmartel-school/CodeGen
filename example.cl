@@ -12,22 +12,32 @@ class Main {
 			 };
 };
 
-class Parent {
-  bar():Bool {
-    true
-  };
-  
-  foo():Int {
-    0
-  };
+class Dummy {
+
 };
 
 class Child inherits Parent {
+  attr3 : String;
+  attr4 : Dummy;
+
   baz():Bool {
     false
   };
 
   foo():Int {
     1
+  };
+};
+
+class Parent {
+  attr1 : Int;
+  attr2 : Bool;
+
+  bar():Bool {
+    true
+  };
+  
+  foo():Int {
+    0
   };
 };

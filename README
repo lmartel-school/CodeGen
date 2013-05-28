@@ -156,3 +156,10 @@ Instructions
 Write-up for PA4
 ----------------
 
+NOTE: I changed a few class names to get the project to work in eclipse.
+Program -> AbstractProgram
+Class_ -> AbstractClass
+Formal -> AbstractFormal
+
+
+We have to change these all back (easy using eclipse refactor), and delete the custom src files before submitting
