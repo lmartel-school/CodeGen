@@ -24,6 +24,8 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
+import java.util.Collections;
+import java.util.ArrayList;
 
 /** This class is used for representing the inheritance tree during code
     generation. You will need to fill in some of its methods and
@@ -31,7 +33,7 @@ import java.util.Enumeration;
 class CgenClassTable extends SymbolTable {
 
     /** All classes in the program, represented as CgenNode */
-    private Vector nds;
+    private Vector<CgenNode> nds;
 
     /** This is the stream to which assembly instructions are output */
     private PrintStream str;
@@ -346,82 +348,165 @@ class CgenClassTable extends SymbolTable {
     // in the base class symbol table.
     
     private void installClass(CgenNode nd) {
-	AbstractSymbol name = nd.getName();
-	if (probe(name) != null) return;
-	nds.addElement(nd);
-	addId(name, nd);
+			AbstractSymbol name = nd.getName();
+			if (probe(name) != null) return;
+			nds.addElement(nd);
+			addId(name, nd);
     }
 
     private void installClasses(Classes cs) {
-        for (Enumeration e = cs.getElements(); e.hasMoreElements(); ) {
+      for (Enumeration e = cs.getElements(); e.hasMoreElements(); ) {
 	    installClass(new CgenNode((Class_)e.nextElement(), 
-				       CgenNode.NotBasic, this));
-        }
+				CgenNode.NotBasic, this));
+      }
     }
 
     private void buildInheritanceTree() {
-	for (Enumeration e = nds.elements(); e.hasMoreElements(); ) {
-	    setRelations((CgenNode)e.nextElement());
-	}
+			for (Enumeration e = nds.elements(); e.hasMoreElements(); ) {
+			  setRelations((CgenNode)e.nextElement());
+			}
     }
 
     private void setRelations(CgenNode nd) {
-	CgenNode parent = (CgenNode)probe(nd.getParent());
-	nd.setParentNd(parent);
-	parent.addChild(nd);
+			CgenNode parent = (CgenNode)probe(nd.getParent());
+			nd.setParentNd(parent);
+			parent.addChild(nd);
+    }
+
+    private void installMethods(){
+    	CgenNode object = root();
+    	installMethodsInner(new Vector<MethodPair>(), object);
+    }
+
+    //installs a list of available methods in each node, paired with the class they're associated with.
+    //this includes all inherited methods.
+    private void installMethodsInner(Vector<MethodPair> inherited, CgenNode node){
+	  	Vector<MethodPair> methods = new Vector<MethodPair>(inherited);
+	    for (Enumeration e = node.getFeatures().getElements(); e.hasMoreElements(); ) {
+	    	Feature feat = (Feature) e.nextElement();
+	    	if(feat instanceof method){
+	    		method cur = (method) feat;
+	    		methods.add(new MethodPair(node, cur));
+	    	}
+	    }
+	    node.setMethods(methods);
+	    for(CgenNode child : (ArrayList<CgenNode>) Collections.list(node.getChildren())){
+	    	installMethodsInner(methods, child);
+	    }
+    }
+
+    private void codeClassNameTab(int objectTagOffset) {
+    	str.print(CgenSupport.CLASSNAMETAB + CgenSupport.LABEL);
+    	for(int i = 0; i < nds.size(); i++){
+    		CgenNode node = nds.get(i);
+    		node.setClassTag(i);
+ 	   		str.println(CgenSupport.WORD + CgenSupport.STRCONST_PREFIX + (i + objectTagOffset));
+ 	   	}
+    }
+
+    private void codeClassObjTab(){
+    	str.print(CgenSupport.CLASSOBJTAB + CgenSupport.LABEL);
+    	for(CgenNode node : nds){
+    		str.print(CgenSupport.WORD);
+    		CgenSupport.emitProtObjRef(node.name, str);
+    		str.println();
+    		str.print(CgenSupport.WORD);
+    		CgenSupport.emitInitRef(node.name, str);
+    		str.println();
+    	}
+    }
+
+    private void codeDispTab(CgenNode node){
+    	str.print(node.name.toString() + CgenSupport.DISPTAB_SUFFIX + CgenSupport.LABEL);
+    	for(MethodPair pair : node.getMethods()){
+    		str.print(CgenSupport.WORD);
+    		CgenSupport.emitMethodRef(pair.cnode.name, pair.met.name, str);
+    		str.println();
+    	}
+    }
+
+    private void codeDispTabs(){
+    	for(CgenNode node : nds){
+    		codeDispTab(node);
+    	}
+    }
+
+    private void codeProtObj(CgenNode klass){
+    	str.println(CgenSupport.WORD + "-1");
+    	CgenSupport.emitProtObjRef(klass.name, str);
+    	str.print(CgenSupport.LABEL);
+    	//str.println 
+    }
+
+    private void codeProtObjs() {
+    	for (CgenNode node : nds){
+	    	codeProtObj(node);
+	    }
     }
 
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
-	nds = new Vector();
+			nds = new Vector<CgenNode>();
 
-	this.str = str;
+			this.str = str;
 
-	stringclasstag = 4  /* Change to your String class tag here */;
-	intclasstag =    2 /* Change to your Int class tag here */;
-	boolclasstag =   3 /* Change to your Bool class tag here */;
+			stringclasstag = 4  /* Change to your String class tag here */;
+			intclasstag =    2 /* Change to your Int class tag here */;
+			boolclasstag =   3 /* Change to your Bool class tag here */;
 
-	enterScope();
-	if (Flags.cgen_debug) System.out.println("Building CgenClassTable");
-	
-	installBasicClasses();
-	installClasses(cls);
-	buildInheritanceTree();
+			enterScope();
+			if (Flags.cgen_debug) System.out.println("Building CgenClassTable");
+			
+			installBasicClasses();
+			installClasses(cls);
+			buildInheritanceTree();
 
-	code();
+			installMethods();
 
-	exitScope();
+			code();
+
+			exitScope();
     }
 
     /** This method is the meat of the code generator.  It is to be
         filled in programming assignment 5 */
     public void code() {
-	if (Flags.cgen_debug) System.out.println("coding global data");
-	codeGlobalData();
+			if (Flags.cgen_debug) System.out.println("coding global data");
+			codeGlobalData();
 
-	if (Flags.cgen_debug) System.out.println("choosing gc");
-	codeSelectGc();
+			if (Flags.cgen_debug) System.out.println("choosing gc");
+			codeSelectGc();
 
-	if (Flags.cgen_debug) System.out.println("coding constants");
-	codeConstants();
+			if (Flags.cgen_debug) System.out.println("coding constants");
+			codeConstants();
 
-	//                 Add your code to emit
-	//                   - prototype objects
-	//                   - class_nameTab
-	//                   - dispatch tables
+			//                 Add your code to emit
+			//                   - prototype objects
+			//                   - class_nameTab
+			//                   - dispatch tables
 
-	if (Flags.cgen_debug) System.out.println("coding global text");
-	codeGlobalText();
+			//is there a better way to get the str_const[Object] value?
+			codeClassNameTab(5);
 
-	//                 Add your code to emit
-	//                   - object initializer
-	//                   - the class methods
-	//                   - etc...
+			codeClassObjTab();
+
+			codeDispTabs();
+
+			//Generate object prototypes (including starter classes)
+			codeProtObjs();
+
+			if (Flags.cgen_debug) System.out.println("coding global text");
+			codeGlobalText();
+
+			//                 Add your code to emit
+			//                   - object initializer
+			//                   - the class methods
+			//                   - etc...
     }
 
     /** Gets the root of the inheritance tree */
     public CgenNode root() {
-	return (CgenNode)probe(TreeConstants.Object_);
+			return (CgenNode)probe(TreeConstants.Object_);
     }
 }
 			  

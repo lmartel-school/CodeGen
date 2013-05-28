@@ -24,13 +24,26 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.HashSet;
+
+class MethodPair {
+
+    public final CgenNode cnode;
+    public final method met;
+
+    public MethodPair(CgenNode klass, method met){
+        cnode = klass;
+        this.met = met;
+    }
+}
 
 class CgenNode extends class_ {
     /** The parent of this node in the inheritance tree */
     private CgenNode parent;
 
     /** The children of this node in the inheritance tree */
-    private Vector children;
+    private Vector<CgenNode> children;
 
     /** Indicates a basic class */
     final static int Basic = 0;
@@ -41,6 +54,11 @@ class CgenNode extends class_ {
     /** Does this node correspond to a basic class? */
     private int basic_status;
 
+    private int tag;
+
+    /** Vector of the class' methods, including inherited ones **/
+    private Vector<MethodPair> methods;
+
     /** Constructs a new CgenNode to represent class "c".
      * @param c the class
      * @param basic_status is this class basic or not
@@ -49,7 +67,7 @@ class CgenNode extends class_ {
     CgenNode(Class_ c, int basic_status, CgenClassTable table) {
 	super(0, c.getName(), c.getParent(), c.getFeatures(), c.getFilename());
 	this.parent = null;
-	this.children = new Vector();
+	this.children = new Vector<CgenNode>();
 	this.basic_status = basic_status;
 	AbstractTable.stringtable.addString(name.getString());
     }
@@ -62,7 +80,7 @@ class CgenNode extends class_ {
      * @return the children
      * */
     Enumeration getChildren() {
-	return children.elements(); 
+	   return children.elements(); 
     }
 
     /** Sets the parent of this class.
@@ -92,6 +110,38 @@ class CgenNode extends class_ {
     boolean basic() { 
 	return basic_status == Basic; 
     }
+
+    void setClassTag(int tag){
+        this.tag = tag;
+    }
+
+    int getClassTag(){
+        return tag;
+    }
+
+    void setMethods(Vector<MethodPair> methods){
+        if(this.methods != null){
+            Utilities.fatalError("methods list already set in CgenNode.setMethods");
+        }
+        this.methods = methods;
+    }
+
+    //returns a list of class,method pairs with overridden methods filtered out.
+    Vector<MethodPair> getMethods(){
+        if(methods != null){
+            Utilities.fatalError("methods list not yet set in CgenNode.getMethods");
+        }
+        Vector<MethodPair> filteredMethods = new Vector<MethodPair>(methods);
+        Set<AbstractSymbol> usedNames = new HashSet<AbstractSymbol>();
+        for(int i = methods.size() - 1; i >= 0; i--){
+            //remove overridden parent methods
+            AbstractSymbol nextName = methods.get(i).met.name;
+            if(usedNames.contains(nextName)) filteredMethods.removeElementAt(i);
+            usedNames.add(nextName);
+        }
+        return filteredMethods;
+    }
+
 }
     
 

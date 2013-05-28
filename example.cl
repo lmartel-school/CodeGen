@@ -12,3 +12,22 @@ class Main {
 			 };
 };
 
+class Parent {
+  bar():Bool {
+    true
+  };
+  
+  foo():Int {
+    0
+  };
+};
+
+class Child inherits Parent {
+  baz():Bool {
+    false
+  };
+
+  foo():Int {
+    1
+  };
+};
