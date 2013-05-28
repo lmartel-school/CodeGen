@@ -64,7 +64,7 @@ class CgenNode extends class_ {
      * @param basic_status is this class basic or not
      * @param table the class table
      * */
-    CgenNode(Class_ c, int basic_status, CgenClassTable table) {
+    CgenNode(AbstractClass c, int basic_status, CgenClassTable table) {
 	super(0, c.getName(), c.getParent(), c.getFeatures(), c.getFilename());
 	this.parent = null;
 	this.children = new Vector<CgenNode>();

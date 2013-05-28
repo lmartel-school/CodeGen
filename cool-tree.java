@@ -14,8 +14,8 @@ import java.util.Vector;
 
 
 /** Defines simple phylum Program */
-abstract class Program extends TreeNode {
-    protected Program(int lineNumber) {
+abstract class AbstractProgram extends TreeNode {
+    protected AbstractProgram(int lineNumber) {
         super(lineNumber);
     }
     public abstract void dump_with_types(PrintStream out, int n);
@@ -26,8 +26,8 @@ abstract class Program extends TreeNode {
 
 
 /** Defines simple phylum Class_ */
-abstract class Class_ extends TreeNode {
-    protected Class_(int lineNumber) {
+abstract class AbstractClass extends TreeNode {
+    protected AbstractClass(int lineNumber) {
         super(lineNumber);
     }
     public abstract void dump_with_types(PrintStream out, int n);
@@ -43,7 +43,7 @@ abstract class Class_ extends TreeNode {
     <p>
     See <a href="ListNode.html">ListNode</a> for full documentation. */
 class Classes extends ListNode {
-    public final static Class elementClass = Class_.class;
+    public final static Class elementClass = AbstractClass.class;
     /** Returns class of this lists's elements */
     public Class getElementClass() {
         return elementClass;
@@ -104,8 +104,8 @@ class Features extends ListNode {
 
 
 /** Defines simple phylum Formal */
-abstract class Formal extends TreeNode {
-    protected Formal(int lineNumber) {
+abstract class AbstractFormal extends TreeNode {
+    protected AbstractFormal(int lineNumber) {
         super(lineNumber);
     }
     public abstract void dump_with_types(PrintStream out, int n);
@@ -117,7 +117,7 @@ abstract class Formal extends TreeNode {
     <p>
     See <a href="ListNode.html">ListNode</a> for full documentation. */
 class Formals extends ListNode {
-    public final static Class elementClass = Formal.class;
+    public final static Class elementClass = AbstractFormal.class;
     /** Returns class of this lists's elements */
     public Class getElementClass() {
         return elementClass;
@@ -227,7 +227,7 @@ class Cases extends ListNode {
 /** Defines AST constructor 'program'.
     <p>
     See <a href="TreeNode.html">TreeNode</a> for full documentation. */
-class program extends Program {
+class program extends AbstractProgram {
     public Classes classes;
     /** Creates "program" AST node. 
       *
@@ -251,7 +251,7 @@ class program extends Program {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_program");
         for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
-	    ((Class_)e.nextElement()).dump_with_types(out, n + 1);
+	    ((AbstractClass)e.nextElement()).dump_with_types(out, n + 1);
         }
     }
     /** This method is the entry point to the semantic checker.  You will
@@ -301,7 +301,7 @@ class program extends Program {
 /** Defines AST constructor 'class_'.
     <p>
     See <a href="TreeNode.html">TreeNode</a> for full documentation. */
-class class_ extends Class_ {
+class class_ extends AbstractClass {
     public AbstractSymbol name;
     public AbstractSymbol parent;
     public Features features;
@@ -394,7 +394,7 @@ class method extends Feature {
         out.println(Utilities.pad(n) + "_method");
         dump_AbstractSymbol(out, n + 2, name);
         for (Enumeration e = formals.getElements(); e.hasMoreElements();) {
-	    ((Formal)e.nextElement()).dump_with_types(out, n + 2);
+	    ((AbstractFormal)e.nextElement()).dump_with_types(out, n + 2);
         }
         dump_AbstractSymbol(out, n + 2, return_type);
 	expr.dump_with_types(out, n + 2);
@@ -448,7 +448,7 @@ class attr extends Feature {
 /** Defines AST constructor 'formal'.
     <p>
     See <a href="TreeNode.html">TreeNode</a> for full documentation. */
-class formal extends Formal {
+class formal extends AbstractFormal {
     public AbstractSymbol name;
     public AbstractSymbol type_decl;
     /** Creates "formal" AST node. 

@@ -356,7 +356,7 @@ class CgenClassTable extends SymbolTable {
 
     private void installClasses(Classes cs) {
       for (Enumeration e = cs.getElements(); e.hasMoreElements(); ) {
-	    installClass(new CgenNode((Class_)e.nextElement(), 
+	    installClass(new CgenNode((AbstractClass)e.nextElement(), 
 				CgenNode.NotBasic, this));
       }
     }
