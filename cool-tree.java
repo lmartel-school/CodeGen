@@ -1326,7 +1326,22 @@ class comp extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.truebool, s);
+        int trueBranch = context.nextLabel();
+        int endBranch = context.nextLabel();
+        CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
+
+        //exp is false branch
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
+        CgenSupport.emitBranch(endBranch);
+
+        //exp is true branch
+        CgenSupport.emitLabelDef(trueBranch, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+
+        CgenSupport.emitLabelDef(endBranch, s);
     }
 
 
