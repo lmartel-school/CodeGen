@@ -1550,6 +1550,20 @@ class isvoid extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        int trueBranch = context.nextLabel();
+        int endBranch = context.nextLabel();
+        CgenSupport.emitBeqz(CgenSupport.ACC, trueBranch, s); //jump if 0
+
+        //"is not void" branch
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+        CgenSupport.emitBranch(endBranch, s);
+
+        //"is void" branch
+        CgenSupport.emitLabelDef(trueBranch, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
+
+        CgenSupport.emitLabelDef(endBranch, s);
     }
 
 
