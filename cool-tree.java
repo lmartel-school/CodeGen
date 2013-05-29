@@ -732,6 +732,21 @@ class cond extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+        int elseBranch = context.nextLabel();
+        int endBranch = context.nextLabel();
+        pred.code(s, context);
+        CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.falsebool, s);
+        CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, elseBranch, s);
+        //"then" (true) branch
+        then_exp.code(s, context);
+        CgenSupport.emitBranch(endBranch, s);
+
+        //"else" (false) branch
+        CgenSupport.emitLabelDef(elseBranch, s);
+        else_exp.code(s, context);
+
+        CgenSupport.emitLabelDef(endBranch, s);
+        //return value of whichever branch is stored in ACC, which is correct.
     }
 
 
