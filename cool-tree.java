@@ -1004,7 +1004,17 @@ class plus extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s, CgenClassTable context) {
+    public void code(PrintStream s, CgenTableClass context) {
+		e1.code(s, context);
+		// result in ACC, so push it on stack
+		emitPush(CGenSupport.ACC, s);
+		
+		e2.code(s, context);
+		
+		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
+		emitAdd(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		
+		emitPop(s);
     }
 
 
@@ -1051,6 +1061,16 @@ class sub extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+		e1.code(s, context);
+		// result in ACC, so push it on stack
+		emitPush(CGenSupport.ACC, s);
+		
+		e2.code(s, context);
+		
+		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
+		emitSub(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		
+		emitPop(s);
     }
 
 
@@ -1097,6 +1117,16 @@ class mul extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+		e1.code(s, context);
+		// result in ACC, so push it on stack
+		emitPush(CGenSupport.ACC, s);
+		
+		e2.code(s, context);
+		
+		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
+		emitMul(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		
+		emitPop(s);
     }
 
 
@@ -1143,6 +1173,16 @@ class divide extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+		e1.code(s, context);
+		// result in ACC, so push it on stack
+		emitPush(CGenSupport.ACC, s);
+		
+		e2.code(s, context);
+		
+		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
+		emitDiv(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		
+		emitPop(s);
     }
 
 
