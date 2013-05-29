@@ -59,6 +59,9 @@ class CgenNode extends class_ {
     /** Does this node correspond to a basic class? */
     private int basic_status;
 
+
+
+    //class tag
     private int tag;
 
     /** Vector of the class' methods, including inherited ones **/
@@ -146,15 +149,7 @@ class CgenNode extends class_ {
         if(methods == null){
             Utilities.fatalError("methods list not yet set in CgenNode.getMethods");
         }
-        Vector<MethodPair> filteredMethods = new Vector<MethodPair>(methods);
-        Set<AbstractSymbol> usedNames = new HashSet<AbstractSymbol>();
-        for(int i = methods.size() - 1; i >= 0; i--){
-            //remove overridden parent methods
-            AbstractSymbol nextName = methods.get(i).met.name;
-            if(usedNames.contains(nextName)) filteredMethods.removeElementAt(i);
-            usedNames.add(nextName);
-        }
-        return filteredMethods;
+        return methods;
     }
 
     void setAttrs(Vector<attr> attrs){
@@ -170,6 +165,13 @@ class CgenNode extends class_ {
             Utilities.fatalError("attrs list not yet set in CgenNode.getAttrs");
         }
         return attrs;
+    }
+
+    int getMethodOffset(AbstractSymbol methodName){
+        for(int i = 0; i < methods.size(); i++){
+            if(methods.get(i).met.name == methodName) return CgenSupport.WORD_SIZE * i; 
+        }
+        return -1;
     }
 
 }

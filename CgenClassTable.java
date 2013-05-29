@@ -26,6 +26,7 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 /** This class is used for representing the inheritance tree during code
     generation. You will need to fill in some of its methods and
@@ -42,6 +43,11 @@ class CgenClassTable extends SymbolTable {
     private int intclasstag;
     private int boolclasstag;
 
+    //unsure if necessary
+    private LinkedHashMap<Integer, CgenNode> tagMap;
+
+    //static type -> CgenNode (used in dispatch, maybe other places)
+    private LinkedHashMap<AbstractSymbol, CgenNode> nameMap;
 
     // The following methods emit code for constants and global
     // declarations.
@@ -416,6 +422,8 @@ class CgenClassTable extends SymbolTable {
     	for(int i = 0; i < nds.size(); i++){
     		CgenNode node = nds.get(i);
     		node.setClassTag(i);
+        tagMap.put(i, node);
+        nameMap.put(node.name, node);
  	   		str.println(CgenSupport.WORD + CgenSupport.STRCONST_PREFIX + (i + objectTagOffset));
  	   	}
     }
@@ -487,6 +495,10 @@ class CgenClassTable extends SymbolTable {
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
 			nds = new Vector<CgenNode>();
+
+      tagMap = new LinkedHashMap<Integer, CgenNode>();
+
+      nameMap = new LinkedHashMap<AbstractSymbol, CgenNode>();
 
 			this.str = str;
 
