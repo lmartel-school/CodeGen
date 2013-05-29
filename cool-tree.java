@@ -19,7 +19,8 @@ import java.util.ArrayList;
 class Location {
 	public String register;
 	public int offset;
-}
+}	
+
 
 
 /** Defines simple phylum Program */
@@ -30,7 +31,7 @@ abstract class AbstractProgram extends TreeNode {
     public abstract void dump_with_types(PrintStream out, int n);
     public abstract void semant();
     public abstract void cgen(PrintStream s);
-
+	
 }
 
 
@@ -369,7 +370,7 @@ class class_ extends AbstractClass {
 		call (at least the reference solution prints all inits, 
 		then goes through class/methods in order */
 		
-		//TODO: add classes attrs to the context we will pass to methods.
+		//TODO: verify only correct attrs being added.
 		context.enterScope();
 		CgenNode node = context.getCgenNodeByName(name);
 		for (int i = 0; i < node.getAttrs().size(); i++) {
@@ -444,14 +445,12 @@ class method extends Feature {
 		CgenSupport.emitPush(CgenSupport.FP, s);
 		CgenSupport.emitPush(CgenSupport.SELF, s);
 		CgenSupport.emitPush(CgenSupport.RA, s);
+		
 		expr.code(s, context);
 		
-		CgenSupport.emitLoad(CgenSupport.FP, 12, CgenSupport.SP, s);
-		CgenSupport.emitLoad(CgenSupport.SELF, 12, CgenSupport.SP, s);
-		CgenSupport.emitLoad(CgenSupport.RA, 12, CgenSupport.SP, s);
-		CgenSupport.emitPop(s);
-		CgenSupport.emitPop(s);
-		CgenSupport.emitPop(s);
+		CgenSupport.emitPopR(CgenSupport.RA, s);
+		CgenSupport.emitPopR(CgenSupport.SELF, s);
+		CgenSupport.emitPopR(CgenSupport.FP, s);
 		CgenSupport.emitReturn(s);
 	}
 
@@ -619,6 +618,7 @@ class assign extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+	//TODO: alert Garbage collector, if enabled
 		expr.code(s, context);
 		//result is in ACC
 		Location varLoc = (Location)context.lookup(name);

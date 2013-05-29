@@ -489,6 +489,15 @@ class CgenSupport {
 	static void emitPop(PrintStream s) {
 		emitAddiu(SP, SP, 4, s);
 	}
+	/** emit code to pop one 4 byte word from the top of the stack
+		and save it in the named register. This is equivalent to calling LW on the top of the stack into a register, then 
+		calling the normal pop defined above. */
+	static void emitPopR(String destRegister, PrintStream s) {
+		emitLoad(destRegister, 1, SP, s);
+		emitPop(s);
+	}
+	
+	
 
     /** Emits code to fetch the integer value of the Integer object.
      * @param source a pointer to the Integer object
@@ -590,6 +599,13 @@ class CgenSupport {
 	byteMode(s);
 	s.println("\t.byte\t0\t");
     }
+	
+	static void dPrint(String message) {
+		if (true) {
+		//toggle this to false to turn off debugPrinting
+			System.out.println(message);
+		}
+	}
 }
     
     
