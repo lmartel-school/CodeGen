@@ -11,6 +11,8 @@
 import java.util.Enumeration;
 import java.io.PrintStream;
 import java.util.Vector;
+import java.util.Collections;
+import java.util.ArrayList;
 
 
 /** Defines simple phylum Program */
@@ -155,7 +157,7 @@ abstract class Expression extends TreeNode {
         else
             { out.println(Utilities.pad(n) + ": _no_type"); }
     }
-    public abstract void code(PrintStream s);
+    public abstract void code(PrintStream s, CgenClassTable context);
 
 }
 
@@ -563,7 +565,7 @@ class assign extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -623,7 +625,7 @@ class static_dispatch extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -678,7 +680,7 @@ class dispatch extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -729,7 +731,7 @@ class cond extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -775,7 +777,22 @@ class loop extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        int loop = context.nextLabel();
+        int finished = context.nextLabel();
+        CgenSupport.emitLabelDef(loop, s);
+
+        //evaluate pred, jump to end if not true
+        pred.code(s, context);
+        CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.truebool, s);
+        CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.T1, finished, s);
+
+        //otherwise, pred is true, so evaluate body and loop again:
+        body.code(s, context);
+        CgenSupport.emitBranch(loop, s);
+
+        CgenSupport.emitLabelDef(finished, s);
+        CgenSupport.emitLoadImm(CgenSupport.ACC, 0, s); //return void in all cases
     }
 
 
@@ -823,7 +840,7 @@ class typcase extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -866,7 +883,11 @@ class block extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        for(Expression exp : (ArrayList<Expression>) Collections.list(body.getElements())){
+            exp.code(s, context);
+        }
+        //the value of the last expression will be loading into acc, which is correct.
     }
 
 
@@ -922,7 +943,7 @@ class let extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1187,7 +1208,9 @@ class neg extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitNeg(CgenSupport.ACC, CgenSupport.ACC, s);
     }
 
 
@@ -1218,8 +1241,8 @@ class lt extends Expression {
         out.print(Utilities.pad(n) + "lt\n");
         e1.dump(out, n+2);
         e2.dump(out, n+2);
-    }
-
+    
+}
     
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
@@ -1233,7 +1256,27 @@ class lt extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        //this is identical to lt except we use Blt instead of Bleq
+
+        int trueBranch = context.nextLabel();
+        int endBranch = context.nextLabel();
+        e1.code(s, context);
+        CgenSupport.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+        CgenSupport.emitBlt(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
+
+        //return false, jump to end
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+        CgenSupport.emitBranch(endBranch, s);
+
+        //true branch
+        CgenSupport.emitLabelDef(trueBranch, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
+
+        CgenSupport.emitLabelDef(endBranch, s);
+        CgenSupport.emitPop(s); //pop stored value (e1) off stack
     }
 
 
@@ -1279,7 +1322,7 @@ class eq extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1325,7 +1368,27 @@ class leq extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        //this is identical to lt except we use Bleq instead of Blt
+
+        int trueBranch = context.nextLabel();
+        int endBranch = context.nextLabel();
+        e1.code(s, context);
+        CgenSupport.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+        CgenSupport.emitBleq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
+
+        //return false, jump to end
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+        CgenSupport.emitBranch(endBranch, s);
+
+        //true branch
+        CgenSupport.emitLabelDef(trueBranch, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
+
+        CgenSupport.emitLabelDef(endBranch, s);
+        CgenSupport.emitPop(s); //pop stored value (e1) off stack
     }
 
 
@@ -1366,7 +1429,22 @@ class comp extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.truebool, s);
+        int trueBranch = context.nextLabel();
+        int endBranch = context.nextLabel();
+        CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
+
+        //"exp is false" branch
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
+        CgenSupport.emitBranch(endBranch, s);
+
+        //"exp is true" branch
+        CgenSupport.emitLabelDef(trueBranch, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+
+        CgenSupport.emitLabelDef(endBranch, s);
     }
 
 
@@ -1406,7 +1484,7 @@ class int_const extends Expression {
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
 	CgenSupport.emitLoadInt(CgenSupport.ACC,
                                 (IntSymbol)AbstractTable.inttable.lookup(token.getString()), s);
     }
@@ -1447,7 +1525,7 @@ class bool_const extends Expression {
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
 	CgenSupport.emitLoadBool(CgenSupport.ACC, new BoolConst(val), s);
     }
 
@@ -1489,7 +1567,7 @@ class string_const extends Expression {
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
 	CgenSupport.emitLoadString(CgenSupport.ACC,
                                    (StringSymbol)AbstractTable.stringtable.lookup(token.getString()), s);
     }
@@ -1531,7 +1609,7 @@ class new_ extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1572,7 +1650,21 @@ class isvoid extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        int trueBranch = context.nextLabel();
+        int endBranch = context.nextLabel();
+        CgenSupport.emitBeqz(CgenSupport.ACC, trueBranch, s); //jump if 0
+
+        //"is not void" branch
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+        CgenSupport.emitBranch(endBranch, s);
+
+        //"is void" branch
+        CgenSupport.emitLabelDef(trueBranch, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
+
+        CgenSupport.emitLabelDef(endBranch, s);
     }
 
 
@@ -1608,7 +1700,7 @@ class no_expr extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1649,7 +1741,7 @@ class object extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
