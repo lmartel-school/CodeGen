@@ -117,7 +117,6 @@ class CgenSupport {
     final static String BLT     = "\tblt\t";
     final static String BGT     = "\tbgt\t";
 
-
     /** Emits an LW instruction.
      * @param dest_reg the destination register
      * @param offset the word offset from source register
@@ -482,11 +481,14 @@ class CgenSupport {
 	emitStore(reg, 0, SP, s);
 	emitAddiu(SP, SP, -4, s);
     }
-
-    static void emitPop(PrintStream s) {
-        emitAddiu(SP, SP, 4, s);
-    }
-
+	
+	/** Emit code to pop one 4 byte word from the top of the stack.
+	 *	The value is not saved in a register, it is the caller's 
+	 *	responsibility to use the value and only pop once done with it.
+	 * */
+	static void emitPop(PrintStream s) {
+		emitAddiu(SP, SP, 4, s);
+	}
 
     /** Emits code to fetch the integer value of the Integer object.
      * @param source a pointer to the Integer object

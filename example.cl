@@ -10,6 +10,18 @@ class Main {
 						   myObject : Object => 3;
 			   esac
 			 };
+			 
+	usingNewInt(): Int {
+		new Int
+	};
+	
+	usingNewSelf(): SELF_TYPE{
+		new SELF_TYPE
+	};
+	
+	onlyAnInt() : Int {
+	1
+	};
 };
 
 class Dummy {

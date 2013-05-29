@@ -13,6 +13,13 @@ import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.ArrayList;
+/** This class represents a location in memory, given by a string register
+ (usually FramePointer or SelfObject) and an int offset from that pointer.
+ This class will be the values that the symboltable maps var names too. */
+class Location {
+	public String register;
+	public int offset;
+}
 
 
 /** Defines simple phylum Program */
@@ -293,6 +300,10 @@ class program extends AbstractProgram {
         s.print("# start of generated code\n");
 
 	CgenClassTable codegen_classtable = new CgenClassTable(classes, s);
+	
+	for (int i = 0; i < classes.getLength(); i++) {
+		((class_)classes.getNth(i)).code(s, codegen_classtable);
+	}
 
 	s.print("\n# end of generated code\n");
     }
@@ -352,6 +363,30 @@ class class_ extends AbstractClass {
     public AbstractSymbol getParent()   { return parent; }
     public AbstractSymbol getFilename() { return filename; }
     public Features getFeatures()       { return features; }
+	
+	public void code(PrintStream s, CgenClassTable context) {
+		/*all init methods should have been taken care of before this
+		call (at least the reference solution prints all inits, 
+		then goes through class/methods in order */
+		
+		//TODO: add classes attrs to the context we will pass to methods.
+		context.enterScope();
+		CgenNode node = context.getCgenNodeByName(name);
+		for (int i = 0; i < node.getAttrs().size(); i++) {
+		//assuming attrs were added in order
+			Location newLoc = new Location();
+			newLoc.register = CgenSupport.SELF;
+			newLoc.offset = 12 + 4*i;
+			context.addId(node.getAttrs().get(i).name, newLoc);
+		}
+		
+		for (int i = 0; i < node.getMethods().size(); i++) {
+			node.getMethods().get(i).met.code(s, context);
+		}
+		
+		
+		context.exitScope();
+	}
 
 }
 
@@ -401,6 +436,11 @@ class method extends Feature {
         dump_AbstractSymbol(out, n + 2, return_type);
 	expr.dump_with_types(out, n + 2);
     }
+	
+	public void code(PrintStream s, CgenClassTable context) {
+		s.println("TODO: implement code at method level");
+	
+	}
 
 }
 
@@ -566,6 +606,10 @@ class assign extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+		expr.code(s, context);
+		//result is in ACC
+		Location varLoc = (Location)context.lookup(name);
+		CgenSupport.emitStore(CgenSupport.ACC, varLoc.offset, varLoc.register, s);		
     }
 
 
@@ -1004,17 +1048,17 @@ class plus extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s, CgenTableClass context) {
+    public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		emitPush(CGenSupport.ACC, s);
+		CgenSupport.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
-		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
-		emitAdd(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+		CgenSupport.emitAdd(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
 		
-		emitPop(s);
+		CgenSupport.emitPop(s);
     }
 
 
@@ -1063,14 +1107,14 @@ class sub extends Expression {
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		emitPush(CGenSupport.ACC, s);
+		CgenSupport.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
-		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
-		emitSub(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+		CgenSupport.emitSub(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
 		
-		emitPop(s);
+		CgenSupport.emitPop(s);
     }
 
 
@@ -1119,14 +1163,14 @@ class mul extends Expression {
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		emitPush(CGenSupport.ACC, s);
+		CgenSupport.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
-		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
-		emitMul(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+		CgenSupport.emitMul(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
 		
-		emitPop(s);
+		CgenSupport.emitPop(s);
     }
 
 
@@ -1175,14 +1219,14 @@ class divide extends Expression {
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		emitPush(CGenSupport.ACC, s);
+		CgenSupport.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
-		emitLoad(CgenSupport.T1, 4, CgenSupport.SP);
-		emitDiv(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC);
+		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+		CgenSupport.emitDiv(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
 		
-		emitPop(s);
+		CgenSupport.emitPop(s);
     }
 
 
@@ -1625,7 +1669,35 @@ class new_ extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
-    }
+		if (type_name == TreeConstants.SELF_TYPE) {
+			CgenSupport.emitLoadAddress(CgenSupport.T1, CgenSupport.CLASSOBJTAB, s);
+			//load address of object table
+			
+			CgenSupport.emitLoad(CgenSupport.T2, CgenSupport.TAG_OFFSET, CgenSupport.SELF, s);
+			//store class tag of self, then mutiply by 8 to get offset of proto_obj
+			CgenSupport.emitSll(CgenSupport.T2, CgenSupport.T2, 3, s);
+			
+			//add offset to address of objext table
+			CgenSupport.emitAddu(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
+			CgenSupport.emitPush(CgenSupport.T1, s);
+			//store address on stack, so it isn't overwritten during copy.
+			CgenSupport.emitLoad(CgenSupport.ACC, 0, CgenSupport.T1, s);
+			//copied object address in ACC, run Object.copy
+			CgenSupport.emitJal("Object.copy", s);
+			CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+			//T1 has address of proto_obj, add 4 for the address of init
+			CgenSupport.emitAddiu(CgenSupport.T1, CgenSupport.T1, 4, s);
+			CgenSupport.emitJalr(CgenSupport.T1, s);
+			// ^ this calls the init method, and leaves the value in ACC
+			// just pop the value we pushed and we're done.
+			CgenSupport.emitPop(s);
+		} else {
+			CgenSupport.emitLoadAddress(CgenSupport.ACC, type_name + CgenSupport.PROTOBJ_SUFFIX, s);
+			//proto obj is in a0, call Object.copy to make a copy.
+			CgenSupport.emitJal("Object.copy", s);
+			CgenSupport.emitJal(type_name + CgenSupport.CLASSINIT_SUFFIX, s);
+		}
+	}
 
 
 }
@@ -1716,6 +1788,7 @@ class no_expr extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+	// don't do anything... that's kinda the meaning of no_expr right?
     }
 
 
@@ -1748,8 +1821,8 @@ class object extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_object");
-	dump_AbstractSymbol(out, n + 2, name);
-	dump_type(out, n);
+		dump_AbstractSymbol(out, n + 2, name);
+		dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1757,6 +1830,10 @@ class object extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+		Location varLoc = (Location)context.lookup(name);
+		/*if name is self, then this should be stored in the lookup table 
+		   with register: CgenSupport.SELF, and offset = 0 */
+		CgenSupport.emitLoad(CgenSupport.ACC, varLoc.offset, varLoc.register, s);
     }
 
 

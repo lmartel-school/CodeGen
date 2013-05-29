@@ -48,8 +48,10 @@ class CgenClassTable extends SymbolTable {
 
     //static type -> CgenNode (used in dispatch, maybe other places)
     private LinkedHashMap<AbstractSymbol, CgenNode> nameMap;
-
-    private int labelNum;
+	
+	public CgenNode getCgenNodeByName(AbstractSymbol class_name) {
+		return nameMap.get(class_name);
+	}
 
     // The following methods emit code for constants and global
     // declarations.
@@ -502,8 +504,6 @@ class CgenClassTable extends SymbolTable {
 
       nameMap = new LinkedHashMap<AbstractSymbol, CgenNode>();
 
-      labelNum = 0;
-
 			this.str = str;
 
 			stringclasstag = 4  /* Change to your String class tag here */;
@@ -563,11 +563,6 @@ class CgenClassTable extends SymbolTable {
     /** Gets the root of the inheritance tree */
     public CgenNode root() {
 			return (CgenNode)probe(TreeConstants.Object_);
-    }
-
-    public int nextLabel(){
-      labelNum++;
-      return labelNum;
     }
 }
 			  
