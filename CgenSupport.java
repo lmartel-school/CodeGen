@@ -117,6 +117,9 @@ class CgenSupport {
     final static String BLT     = "\tblt\t";
     final static String BGT     = "\tbgt\t";
 
+    final static String NOT  = "\tnot\t";
+
+
     /** Emits an LW instruction.
      * @param dest_reg the destination register
      * @param offset the word offset from source register
@@ -219,6 +222,12 @@ class CgenSupport {
      * */
     static void emitNeg(String dest_reg, String source_reg, PrintStream s) {
 	s.println(NEG + dest_reg + " " + source_reg);
+    }
+
+    /** Emits a NOT instruction (bitwise negation)
+     * */
+    static void emitNot(String dest_reg, String source_reg, PrintStream s) {
+        s.println(NOT + dest_reg + " " + source_reg);
     }
     
     /** Emits an ADD instruction.

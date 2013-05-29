@@ -155,7 +155,7 @@ abstract class Expression extends TreeNode {
         else
             { out.println(Utilities.pad(n) + ": _no_type"); }
     }
-    public abstract void code(PrintStream s);
+    public abstract void code(PrintStream s, CgenClassTable context);
 
 }
 
@@ -563,7 +563,7 @@ class assign extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -623,7 +623,7 @@ class static_dispatch extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -678,7 +678,7 @@ class dispatch extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -729,7 +729,7 @@ class cond extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -775,7 +775,7 @@ class loop extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -823,7 +823,7 @@ class typcase extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -866,7 +866,7 @@ class block extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -922,7 +922,7 @@ class let extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -968,7 +968,7 @@ class plus extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1014,7 +1014,7 @@ class sub extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1060,7 +1060,7 @@ class mul extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1106,7 +1106,7 @@ class divide extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1147,7 +1147,9 @@ class neg extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitNot(CgenSupport.ACC, CgenSupport.ACC, s);
     }
 
 
@@ -1193,7 +1195,7 @@ class lt extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1239,7 +1241,7 @@ class eq extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1285,7 +1287,7 @@ class leq extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1333,11 +1335,11 @@ class comp extends Expression {
         int endBranch = context.nextLabel();
         CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
 
-        //exp is false branch
+        //"exp is false" branch
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
-        CgenSupport.emitBranch(endBranch);
+        CgenSupport.emitBranch(endBranch, s);
 
-        //exp is true branch
+        //"exp is true" branch
         CgenSupport.emitLabelDef(trueBranch, s);
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
 
@@ -1381,7 +1383,7 @@ class int_const extends Expression {
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
 	CgenSupport.emitLoadInt(CgenSupport.ACC,
                                 (IntSymbol)AbstractTable.inttable.lookup(token.getString()), s);
     }
@@ -1422,7 +1424,7 @@ class bool_const extends Expression {
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
 	CgenSupport.emitLoadBool(CgenSupport.ACC, new BoolConst(val), s);
     }
 
@@ -1464,7 +1466,7 @@ class string_const extends Expression {
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
 	CgenSupport.emitLoadString(CgenSupport.ACC,
                                    (StringSymbol)AbstractTable.stringtable.lookup(token.getString()), s);
     }
@@ -1506,7 +1508,7 @@ class new_ extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1547,7 +1549,7 @@ class isvoid extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1583,7 +1585,7 @@ class no_expr extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1624,7 +1626,7 @@ class object extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
