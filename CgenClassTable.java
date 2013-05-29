@@ -55,6 +55,8 @@ class CgenClassTable extends SymbolTable {
 		return nameMap.get(class_name);
 	}
 
+    private CgenNode selfObject;
+
     // The following methods emit code for constants and global
     // declarations.
 
@@ -566,9 +568,25 @@ class CgenClassTable extends SymbolTable {
     public CgenNode root() {
 			return (CgenNode)probe(TreeConstants.Object_);
     }
-			  
-    public int nextLabel() {
-		labelNum++;
-		return labelNum;
-	}
+
+    public int nextLabel(){
+      labelNum++;
+      return labelNum;
+    }
+
+    public CgenNode getCgenNode(AbstractSymbol name){
+      CgenNode val = nameMap.get(name);
+      if(val == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode()");
+      return val;
+    }
+
+    public void setSelfObject(CgenNode node){
+      selfObject = node;
+    }
+
+    public CgenNode getSelfObject(){
+      if (selfObject == null) Utilities.fatalError("returning null value from CgenClassTable.getSelfObject(). "
+        + "I'm assuming this should never happen until I'm proven otherwise.");
+      return selfObject;
+    }
 }

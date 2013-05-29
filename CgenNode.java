@@ -26,6 +26,7 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.ArrayList;
 
 class MethodPair {
 
@@ -172,6 +173,19 @@ class CgenNode extends class_ {
             if(methods.get(i).met.name == methodName) return CgenSupport.WORD_SIZE * i; 
         }
         return -1;
+    }
+
+    Set<CgenNode> getAllDescendants(){
+        Set<CgenNode> descendants = new HashSet<CgenNode>();
+        addDescendants(descendants, this);
+        return descendants;
+    }
+
+    private void addDescendants(Set<CgenNode> descendants, CgenNode cur){
+        descendants.add(cur);
+        for(CgenNode child : (ArrayList<CgenNode>) cur.getChildren()){
+            addDescendants(descendants, child);
+        }
     }
 
 }

@@ -13,6 +13,8 @@ import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.Comparator;
 /** This class represents a location in memory, given by a string register
  (usually FramePointer or SelfObject) and an int offset from that pointer.
  This class will be the values that the symboltable maps var names too. */
@@ -575,6 +577,31 @@ class branch extends Case {
 	expr.dump_with_types(out, n + 2);
     }
 
+    public void code(PrintStream s, CgenClassTable context, Set<CgenNode> possibleExprTypes, int finished){
+        //we keep only the types that are valid subclasses of BOTH the expr type and branch type 
+        Set<CgenNode> validTypes = context.getCgenNode(type_decl).getAllDescendants();
+        validTypes.retainAll(possibleExprTypes);
+
+        int expression = context.nextLabel();
+        int giveUp = context.nextLabel();
+        for(CgenNode guess : validTypes){
+            CgenSupport.emitLoadImm(CgenSupport.T1, guess.getClassTag(), s);
+            CgenSupport.emitBeq(CgenSupport.T1, CgenSupport.T2, expression, s);
+        }
+        //match not found; give up
+        CgenSupport.emitBranch(giveUp, s);
+
+        CgenSupport.emitLabelDef(expression, s);
+        //match found! execute expression, jump to end of branches
+        //TODO: ADD BRANCH VARIABLE TO ENVIRONMENT.
+        //It's still in ACC at this point, I just don't have anywhere to put it yet
+        expr.code(s, context);
+        CgenSupport.emitBranch(finished, s);
+
+        //match not found, try another branch
+        CgenSupport.emitLabelDef(giveUp, s);
+    }
+
 }
 
 
@@ -912,7 +939,77 @@ class typcase extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
+
+    //we use a helper method for the sort with the context
+    //marked final, in order to reference it in the inner class
+    private void sortBranchList(ArrayList<branch> branches, final CgenClassTable context){
+        Collections.sort(branches, new Comparator(){
+
+            //sort by class-tag in descending order
+            public int compare(Object first, Object second){
+                branch b1 = (branch) first;
+                branch b2 = (branch) second;
+                CgenNode n1 = context.getCgenNode(b1.type_decl);
+                CgenNode n2 = context.getCgenNode(b2.type_decl);
+                return n2.getClassTag() - n1.getClassTag();
+            }
+        });
+    }
+
     public void code(PrintStream s, CgenClassTable context) {
+        //we need to select the closest ancestor of expr,
+        //so we sort the branches by descending static type class tag
+
+        //we also need to check whether expr is a descendant of <branch-type>.
+        //we have expr's static type, so we get all possible children. At each branch,
+        //we narrow our list of all possible children down to those that are valid descendants of
+        //<branch-type>, then compare classtags to see if we have a match.
+
+        ArrayList<branch> branches = (ArrayList<branch>) Collections.list(cases.getElements());
+        
+        sortBranchList(branches, context);
+
+        expr.code(s, context);
+        //store return value
+        CgenSupport.emitMove(CgenSupport.T2, CgenSupport.ACC, s); 
+
+        //set up registers and check for "called on void" error
+        
+        //TODO: confirm this is getting filename string constant correctly
+        StringSymbol filename = (StringSymbol) context.getSelfObject().getFilename();
+        CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
+        
+        CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
+        int notvoid = context.nextLabel();
+        CgenSupport.emitLoadImm(CgenSupport.T3, 0, s);
+        CgenSupport.emitBne(CgenSupport.T2, CgenSupport.T3, notvoid, s);
+        CgenSupport.emitJal("_case_abort2", s);
+        CgenSupport.emitLabelDef(notvoid, s);
+        CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.T2, s); //restore ACC
+
+        //loads the class tag of expr's return value into T2. don't mess with T2 until we're done with it...
+        CgenSupport.emitLoad(CgenSupport.T2, 0, CgenSupport.ACC, s);
+
+        int finished = context.nextLabel();
+        Set<CgenNode> possibleExprTypes = context.getCgenNode(expr.get_type()).getAllDescendants();
+        for(branch b : branches){
+            b.code(s, context, possibleExprTypes, finished);
+        }
+
+        //no branch matched!
+        //load expr's class name using classNameTab into ACC
+        //load class name table address into T1
+        CgenSupport.emitLoadAddress(CgenSupport.T1, CgenSupport.CLASSNAMETAB, s);
+        //reload class tag: should be unnecessary
+        CgenSupport.emitLoad(CgenSupport.T2, 0, CgenSupport.ACC, s);
+        //add class tag to class name table address to get to the class name label
+        CgenSupport.emitAdd(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
+
+        //TODO: find a way to load the string constant pointed to by that label into T1
+        //CgenSupport.emitLoad(CgenSupport.T1, ???)
+        CgenSupport.emitJal("_case_abort", s);
+
+        CgenSupport.emitLabelDef(finished, s);
     }
 
 
