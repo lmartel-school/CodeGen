@@ -381,7 +381,9 @@ class class_ extends AbstractClass {
 		}
 		
 		for (int i = 0; i < node.getMethods().size(); i++) {
-			node.getMethods().get(i).met.code(s, context);
+			MethodPair pair = node.getMethods().get(i);
+			s.println(node.name.toString() + CgenSupport.METHOD_SEP + pair.met.name.toString() + CgenSupport.LABEL);
+			pair.met.code(s, context);
 		}
 		
 		
@@ -438,8 +440,19 @@ class method extends Feature {
     }
 	
 	public void code(PrintStream s, CgenClassTable context) {
-		s.println("TODO: implement code at method level");
-	
+		s.println("TODO: enter formal params into context");
+		CgenSupport.emitPush(CgenSupport.FP, s);
+		CgenSupport.emitPush(CgenSupport.SELF, s);
+		CgenSupport.emitPush(CgenSupport.RA, s);
+		expr.code(s, context);
+		
+		CgenSupport.emitLoad(CgenSupport.FP, 12, CgenSupport.SP, s);
+		CgenSupport.emitLoad(CgenSupport.SELF, 12, CgenSupport.SP, s);
+		CgenSupport.emitLoad(CgenSupport.RA, 12, CgenSupport.SP, s);
+		CgenSupport.emitPop(s);
+		CgenSupport.emitPop(s);
+		CgenSupport.emitPop(s);
+		CgenSupport.emitReturn(s);
 	}
 
 }

@@ -49,6 +49,8 @@ class CgenClassTable extends SymbolTable {
     //static type -> CgenNode (used in dispatch, maybe other places)
     private LinkedHashMap<AbstractSymbol, CgenNode> nameMap;
 	
+	private int labelNum;
+	
 	public CgenNode getCgenNodeByName(AbstractSymbol class_name) {
 		return nameMap.get(class_name);
 	}
@@ -564,6 +566,9 @@ class CgenClassTable extends SymbolTable {
     public CgenNode root() {
 			return (CgenNode)probe(TreeConstants.Object_);
     }
-}
 			  
-    
+    public int nextLabel() {
+		labelNum++;
+		return labelNum;
+	}
+}
