@@ -36,6 +36,11 @@ class MethodPair {
         cnode = klass;
         this.met = met;
     }
+
+    //methodpairs are "equal" if their methods have the same name (used for overriding)
+    public boolean equals(Object o){
+        return o instanceof MethodPair && met.name == ((MethodPair) o).met.name;
+    }
 }
 
 class CgenNode extends class_ {

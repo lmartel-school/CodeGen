@@ -29,6 +29,20 @@ class Child inherits Parent {
   };
 };
 
+class Grandchild inherits Child {
+  bar():Bool {
+    false
+  };
+
+  foo():Int {
+    2
+  };
+
+  own():Int {
+    4
+  };
+};
+
 class Parent {
   attr1 : Int;
   attr2 : Bool;

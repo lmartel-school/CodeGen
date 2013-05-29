@@ -379,20 +379,31 @@ class CgenClassTable extends SymbolTable {
     }
 
     //installs a list of available methods in each node, paired with the class they're associated with.
-    //this includes all inherited methods.
+    //this includes all inherited methods and overrides all .
     private void installFeaturesInner(Vector<MethodPair> inheritedMethods, Vector<attr> inheritedAttrs, CgenNode node){
 	  	Vector<MethodPair> methods = new Vector<MethodPair>(inheritedMethods);
       Vector<attr> attrs = new Vector<attr>(inheritedAttrs);
-	    for (Enumeration e = node.getFeatures().getElements(); e.hasMoreElements(); ) {
-	    	Feature feat = (Feature) e.nextElement();
-	    	if(feat instanceof method){
-	    		method cur = (method) feat;
-	    		methods.add(new MethodPair(node, cur));
-	    	} else if(feat instanceof attr){
-          attr cur = (attr) feat;
-          attrs.add(cur);
+      Vector<MethodPair> newMethods = new Vector<MethodPair>();
+      for(Feature f : (ArrayList<Feature>) Collections.list(node.getFeatures().getElements())){
+        if(f instanceof method){
+          newMethods.add(new MethodPair(node, (method)f));
+        } else {
+          attrs.add((attr) f);
         }
-	    }
+      }
+
+      //perform overrides in-place to ensure same ordering as in parent
+      for(int i = 0; i < methods.size(); i++){
+        int found = newMethods.indexOf(methods.get(i));
+        if(found != -1){
+          methods.set(i, newMethods.get(found));
+          newMethods.removeElementAt(found);
+        }
+      }
+
+      //append whatever was not used in an override
+      methods.addAll(newMethods);
+
 	    node.setMethods(methods);
       node.setAttrs(attrs);
 	    for(CgenNode child : (ArrayList<CgenNode>) Collections.list(node.getChildren())){
