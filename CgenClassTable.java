@@ -56,6 +56,7 @@ class CgenClassTable extends SymbolTable {
   	}
 
     public CgenNode getCgenNode(AbstractSymbol name){
+      if(name == TreeConstants.SELF_TYPE) return currentClass;
       CgenNode val = nameMap.get(name);
       if(val == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode()");
       return val;
@@ -515,6 +516,17 @@ class CgenClassTable extends SymbolTable {
     }
 
     private void codeInit(CgenNode klass){
+
+      enterScope();
+      Vector<attr> attrs = klass.getAttrs();
+      for (int i = 0; i < attrs.size(); i++) {
+      //assuming attrs were added in order
+        Location newLoc = new Location();
+        newLoc.register = CgenSupport.SELF; //we DO have a self object in initializers
+        newLoc.offset = 3 + i;
+        this.addId(attrs.get(i).name, newLoc);
+      }
+
       //boilerplate
       str.print(klass.name + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
       CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);
@@ -533,10 +545,10 @@ class CgenClassTable extends SymbolTable {
       //evaluate and store local attrs
       for(attr a : klass.getNonInheritedAttrs()){
         if(a.init instanceof no_expr) continue;
-		setCurrentClass(klass);
+		    setCurrentClass(klass);
         a.init.code(str, this);
         CgenSupport.emitStore(CgenSupport.ACC, klass.getAttrOffset(a.name), CgenSupport.SELF, str);
-		setCurrentClass(null);
+		    setCurrentClass(null);
       }
 
       //boilerplate
@@ -546,6 +558,8 @@ class CgenClassTable extends SymbolTable {
       CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str);
       CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str);
       CgenSupport.emitReturn(str);
+
+      exitScope();
     }
 
     private void codeInitializers(){

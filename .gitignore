@@ -8,6 +8,9 @@ java-cup-11a.jar
 *.class
 cgen
 
+# ignore spim softlink because it doesn't work through git
+spim
+
 # ignore symbol files to avoid confusion -- just re-run the tests
 *.s
 *.s.our
