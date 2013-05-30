@@ -153,6 +153,17 @@ class CgenNode extends class_ {
         return methods;
     }
 
+    Vector<MethodPair> getNonInheritedMethods(){
+        if(methods == null){
+            Utilities.fatalError("methods list not yet set in CgenNode.getNonInheritedMethods");
+        }
+        Vector<MethodPair> nonInherited = new Vector<MethodPair>();
+        for(MethodPair mp : methods){
+            if(mp.cnode.name == this.name) nonInherited.add(mp);
+        }
+        return nonInherited;
+    }
+
     void setAttrs(Vector<attr> attrs){
         if(this.attrs != null){
             Utilities.fatalError("attrs list already set in CgenNode.setAttrs");

@@ -21,6 +21,13 @@ import java.util.Comparator;
 class Location {
 	public String register;
 	public int offset;
+
+    public Location(){}
+
+    public Location(String reg, int off){
+        register = reg;
+        offset = off;
+    }
 }	
 
 
@@ -375,6 +382,7 @@ class class_ extends AbstractClass {
 		//TODO: verify only correct attrs being added.
 		context.enterScope();
 		CgenNode node = context.getCgenNodeByName(name);
+        context.setCurrentClass(node);
 		for (int i = 0; i < node.getAttrs().size(); i++) {
 		//assuming attrs were added in order
 			Location newLoc = new Location();
@@ -389,7 +397,7 @@ class class_ extends AbstractClass {
 			pair.met.code(s, context);
 		}
 		
-		
+		context.setCurrentClass(null);
 		context.exitScope();
 	}
 
@@ -593,8 +601,13 @@ class branch extends Case {
 
         CgenSupport.emitLabelDef(expression, s);
         //match found! execute expression, jump to end of branches
+
         //TODO: ADD BRANCH VARIABLE TO ENVIRONMENT.
-        //It's still in ACC at this point, I just don't have anywhere to put it yet
+        Location branchVarLoc = new Location();
+        //what's the best way to do this? I'm thinking an absolute memory location on the stack,
+        //but we'll need to add a bit to Location to make that work
+        context.addId(name, branchVarLoc);
+
         expr.code(s, context);
         CgenSupport.emitBranch(finished, s);
 
@@ -976,7 +989,7 @@ class typcase extends Expression {
         //set up registers and check for "called on void" error
         
         //TODO: confirm this is getting filename string constant correctly
-        StringSymbol filename = (StringSymbol) context.getSelfObject().getFilename();
+        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getCurrentClass().getFilename().toString());
         CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
         
         CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
@@ -996,17 +1009,8 @@ class typcase extends Expression {
             b.code(s, context, possibleExprTypes, finished);
         }
 
-        //no branch matched!
-        //load expr's class name using classNameTab into ACC
-        //load class name table address into T1
-        CgenSupport.emitLoadAddress(CgenSupport.T1, CgenSupport.CLASSNAMETAB, s);
-        //reload class tag: should be unnecessary
-        CgenSupport.emitLoad(CgenSupport.T2, 0, CgenSupport.ACC, s);
-        //add class tag to class name table address to get to the class name label
-        CgenSupport.emitAdd(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
-
-        //TODO: find a way to load the string constant pointed to by that label into T1
-        //CgenSupport.emitLoad(CgenSupport.T1, ???)
+        // no branch matched!
+        // error requires the object returned by expr to still be in the ACC, which it should be.
         CgenSupport.emitJal("_case_abort", s);
 
         CgenSupport.emitLabelDef(finished, s);
