@@ -14,7 +14,6 @@ import java.util.Vector;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Set;
-import java.util.Comparator;
 /** This class represents a location in memory, given by a string register
  (usually FramePointer or SelfObject) and an int offset from that pointer.
  This class will be the values that the symboltable maps var names too. */
@@ -311,10 +310,16 @@ class program extends AbstractProgram {
 
 	CgenClassTable codegen_classtable = new CgenClassTable(classes, s);
 	
+	Location selfLoc = new Location();
+	selfLoc.register = CgenSupport.SELF;
+	selfLoc.offset = 0;
+	codegen_classtable.enterScope();
+	codegen_classtable.addId(TreeConstants.self, selfLoc);
 	for (int i = 0; i < classes.getLength(); i++) {
 		((class_)classes.getNth(i)).code(s, codegen_classtable);
 	}
 
+	codegen_classtable.exitScope();
 	s.print("\n# end of generated code\n");
     }
 
@@ -379,21 +384,21 @@ class class_ extends AbstractClass {
 		call (at least the reference solution prints all inits, 
 		then goes through class/methods in order */
 		
-		//TODO: verify only correct attrs being added.
 		context.enterScope();
 		CgenNode node = context.getCgenNodeByName(name);
         context.setCurrentClass(node);
-		for (int i = 0; i < node.getAttrs().size(); i++) {
+		Vector<attr> attrs = node.getAttrs();
+		for (int i = 0; i < attrs.size(); i++) {
 		//assuming attrs were added in order
 			Location newLoc = new Location();
 			newLoc.register = CgenSupport.SELF;
 			newLoc.offset = 12 + 4*i;
-			context.addId(node.getAttrs().get(i).name, newLoc);
+			context.addId(attrs.get(i).name, newLoc);
 		}
-		
-		for (int i = 0; i < node.getMethods().size(); i++) {
-			MethodPair pair = node.getMethods().get(i);
-			s.println(node.name.toString() + CgenSupport.METHOD_SEP + pair.met.name.toString() + CgenSupport.LABEL);
+		Vector<MethodPair> methods = node.getNonInheritedMethods();
+		for (int i = 0; i < methods.size(); i++) {
+			MethodPair pair = methods.get(i);
+			s.print(node.name.toString() + CgenSupport.METHOD_SEP + pair.met.name.toString() + CgenSupport.LABEL);
 			pair.met.code(s, context);
 		}
 		
@@ -451,10 +456,24 @@ class method extends Feature {
     }
 	
 	public void code(PrintStream s, CgenClassTable context) {
-		s.println("TODO: enter formal params into context");
-		context.emitPush(CgenSupport.FP, s);
-		context.emitPush(CgenSupport.SELF, s);
-		context.emitPush(CgenSupport.RA, s);
+		context.enterScope();
+		for (int i = 0; i < formals.getLength(); i++) {
+			Location formalLoc = new Location();
+			formalLoc.register = CgenSupport.FP;
+			formalLoc.offset = formals.getLength() - i + 2;
+			context.addId(((formal)formals.getNth(i)).name, formalLoc);
+		}
+		
+		CgenSupport.emitPush(CgenSupport.FP, s);
+		CgenSupport.emitPush(CgenSupport.SELF, s);
+		CgenSupport.emitPush(CgenSupport.RA, s);
+		
+		CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, s);
+		//set frame pointer, so formal params are easily accessible. 
+		//ith arg (0 indexed) is at FP + 12 + 4*i
+		
+		CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, s);
+		//methods get the new self object passed in ACC, so set into SELF
 		
 		expr.code(s, context);
 		
@@ -462,6 +481,7 @@ class method extends Feature {
 		context.emitPopR(CgenSupport.SELF, s);
 		context.emitPopR(CgenSupport.FP, s);
 		CgenSupport.emitReturn(s);
+		context.exitScope();
 	}
 
 }
@@ -785,9 +805,37 @@ class dispatch extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+        //TODO: find right place to put this:
         context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
 
-        //TODO
+        
+		for (int i = 0; i < actual.getLength(); i++) {
+			((Expression)actual.getNth(i)).code(s, context);
+			// result of arg evaluation is an ACC, push onto stack
+			
+			CgenSupport.emitPush(CgenSupport.ACC, s);
+		}
+		//CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
+		//pass callingobject in ACC, but only after checking non-null!
+		expr.code(s, context);
+		int nonVoid = context.nextLabel();
+		CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
+		// if it's currently void, load error messages and jal _dispatch_abort
+		CgenSupport.emitLoadString(CgenSupport.ACC, (StringSymbol)AbstractTable.stringtable.lookup(context.getCurrentClass().filename.getString()), s);
+		CgenSupport.emitLoadImm(CgenSupport.T1, lineNumber, s);
+		CgenSupport.emitJal("_dispatch_abort", s);
+		
+		//create non-void branch
+		CgenSupport.emitLabelDef(nonVoid, s);
+		
+		CgenSupport.emitLoad(CgenSupport.T1, CgenSupport.DISPTABLE_OFFSET, CgenSupport.ACC, s);
+		//load disptable base address
+		
+		CgenSupport.emitLoad(CgenSupport.T1, context.getCurrentClass().getMethodOffset(name), CgenSupport.T1, s);
+		//index into dispTab for method address
+		
+		CgenSupport.emitJalr(CgenSupport.T1, s);
+		
     }
 
 
@@ -962,23 +1010,6 @@ class typcase extends Expression {
       * you wish.)
       * @param s the output stream 
       * */
-
-    //we use a helper method for the sort with the context
-    //marked final, in order to reference it in the inner class
-    private void sortBranchList(ArrayList<branch> branches, final CgenClassTable context){
-        Collections.sort(branches, new Comparator(){
-
-            //sort by class-tag in descending order
-            public int compare(Object first, Object second){
-                branch b1 = (branch) first;
-                branch b2 = (branch) second;
-                CgenNode n1 = context.getCgenNode(b1.type_decl);
-                CgenNode n2 = context.getCgenNode(b2.type_decl);
-                return n2.getClassTag() - n1.getClassTag();
-            }
-        });
-    }
-
     public void code(PrintStream s, CgenClassTable context) {
         //we need to select the closest ancestor of expr,
         //so we sort the branches by descending static type class tag
@@ -1024,6 +1055,7 @@ class typcase extends Expression {
         CgenSupport.emitJal("_case_abort", s);
 
         CgenSupport.emitLabelDef(finished, s);
+		
     }
 
 
@@ -2037,10 +2069,12 @@ class object extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
-		Location varLoc = (Location)context.lookup(name);
-		/*if name is self, then this should be stored in the lookup table 
-		   with register: CgenSupport.SELF, and offset = 0 */
-		CgenSupport.emitLoad(CgenSupport.ACC, varLoc.offset, varLoc.register, s);
+		if (name == TreeConstants.self) {
+			CgenSupport.emitLoad(CgenSupport.ACC, 0, CgenSupport.SELF, s);
+		} else {
+			Location varLoc = (Location)context.lookup(name);
+			CgenSupport.emitLoad(CgenSupport.ACC, varLoc.offset, varLoc.register, s);
+		}
     }
 
 
