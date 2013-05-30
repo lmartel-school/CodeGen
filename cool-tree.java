@@ -13,6 +13,7 @@ import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Set;
 /** This class represents a location in memory, given by a string register
  (usually FramePointer or SelfObject) and an int offset from that pointer.
  This class will be the values that the symboltable maps var names too. */
@@ -393,9 +394,9 @@ class class_ extends AbstractClass {
 			newLoc.offset = 12 + 4*i;
 			context.addId(node.getAttrs().get(i).name, newLoc);
 		}
-		
-		for (int i = 0; i < node.getMethods().size(); i++) {
-			MethodPair pair = node.getMethods().get(i);
+		Vector<MethodPair> methods = node.getNonInheritedMethods();
+		for (int i = 0; i < methods.size(); i++) {
+			MethodPair pair = methods.get(i);
 			s.print(node.name.toString() + CgenSupport.METHOD_SEP + pair.met.name.toString() + CgenSupport.LABEL);
 			pair.met.code(s, context);
 		}
@@ -1015,6 +1016,7 @@ class typcase extends Expression {
         CgenSupport.emitJal("_case_abort", s);
 
         CgenSupport.emitLabelDef(finished, s);
+		
     }
 
 
