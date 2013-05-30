@@ -1524,9 +1524,12 @@ class eq extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
         e1.code(s, context);
-        CgenSupport.emitMove(CgenSupport.T1, CgenSupport.ACC, s);
+        CgenSupport.emitPush(CgenSupport.ACC, s);
         e2.code(s, context);
-        CgenSupport.emitMove(CgenSupport.T2, CgenSupport.ACC, s);
+        CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s); //load e1 result
+        CgenSupport.emitMove(CgenSupport.T2, CgenSupport.ACC, s); //load e2 result
+        CgenSupport.emitPop(s);
+        
         //if pointers equal, return true immediately
         int finished = context.nextLabel();
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
