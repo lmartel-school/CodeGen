@@ -1,6 +1,5 @@
-(* hello-world.cl *) 
-class Main inherits IO { 
-  main() : Object { 
-    out_string("Hello, world.\n") 
-  } ; 
-} ; 
+class Main inherits IO {
+   main(): SELF_TYPE {
+	out_string("Hello, World.\n")
+   };
+};
