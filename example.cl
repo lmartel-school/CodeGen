@@ -55,6 +55,10 @@ class Main {
 		lotsOfParams(1, 2, 3, 4, 5)
 	};
 	
+	makeStaticDispatch() : Int {
+	 (new Grandchild)@Child.foo()
+	};
+	
 };
 
 class Dummy {
