@@ -2119,7 +2119,7 @@ class object extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
 		if (name == TreeConstants.self) {
-			CgenSupport.emitLoad(CgenSupport.ACC, 0, CgenSupport.SELF, s);
+			CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
 		} else {
 			Location varLoc = (Location)context.lookup(name);
 			CgenSupport.emitLoad(CgenSupport.ACC, varLoc.offset, varLoc.register, s);
