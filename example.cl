@@ -94,7 +94,7 @@ class Grandchild inherits Child {
 
 class Parent {
   attr1 : Int <- foo();
-  attr2 : Bool;
+  attr2 : Bool <- bar();
 
   bar():Bool {
     true

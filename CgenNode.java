@@ -70,7 +70,9 @@ class CgenNode extends class_ {
     private Vector<MethodPair> methods;
 
     /** Vector of the class' attributes, including inherited ones **/
-    private Vector<attr> attrs;
+    private Vector<attr> inheritedAttrs;
+
+    private Vector<attr> localAttrs;
 
     /** Constructs a new CgenNode to represent class "c".
      * @param c the class
@@ -165,19 +167,46 @@ class CgenNode extends class_ {
         return nonInherited;
     }
 
-    void setAttrs(Vector<attr> attrs){
-        if(this.attrs != null){
-            Utilities.fatalError("attrs list already set in CgenNode.setAttrs");
+    void setInheritedAttrs(Vector<attr> inheritedAttrs){
+        if(this.inheritedAttrs != null){
+            Utilities.fatalError("attrs list already set in CgenNode.setInheritedAttrs");
         }
-        this.attrs = attrs;
+        this.inheritedAttrs = inheritedAttrs;
+    }
+
+    void setLocalAttrs(Vector<attr> localAttrs){
+        if(this.localAttrs != null){
+            Utilities.fatalError("attrs list already set in CgenNode.setLocalAttrs");
+        }
+        this.localAttrs = localAttrs;
     }
 
     //no filtering since attrs cannot be overridden
     Vector<attr> getAttrs(){
-        if(attrs == null){
-            Utilities.fatalError("attrs list not yet set in CgenNode.getAttrs");
+        if(inheritedAttrs == null || localAttrs == null){
+            Utilities.fatalError("attrs lists not yet set in CgenNode.getAttrs");
         }
-        return attrs;
+        Vector<attr> allAttrs = new Vector<attr>(inheritedAttrs);
+        allAttrs.addAll(localAttrs);
+        return allAttrs;
+    }
+
+    //only local attrs
+    Vector<attr> getNonInheritedAttrs(){
+        if(localAttrs == null){
+            Utilities.fatalError("attrs list not yet set in CgenNode.getNonInheritedAttrs");
+        }
+        return localAttrs;
+    }
+
+
+
+    int getAttrOffset(AbstractSymbol attrName){
+        Vector<attr> attrs = getAttrs();
+        for(int i = 0; i < attrs.size(); i++){
+            if(attrs.get(i).name == attrName) return (3 + i);
+        }
+        return -1;
     }
 
     int getMethodOffset(AbstractSymbol methodName){

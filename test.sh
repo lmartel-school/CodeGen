@@ -1,6 +1,10 @@
-rm example.ref.s -f
-rm example.our.s -f
-/usr/class/cs143/bin/coolc example.cl
-mv example.s example.ref.s
-./mycoolc example.cl
-mv example.s example.our.s
+rm *.s.ref -f
+rm *.s.our -f
+FILES="./*.cl"
+for f in $FILES
+do
+  /usr/class/cs143/bin/coolc $f
+  mv *.s $f.s.ref
+  ./mycoolc $f
+  mv *.s $f.s.our
+done

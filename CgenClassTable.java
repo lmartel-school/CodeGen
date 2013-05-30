@@ -49,13 +49,22 @@ class CgenClassTable extends SymbolTable {
     //static type -> CgenNode (used in dispatch, maybe other places)
     private LinkedHashMap<AbstractSymbol, CgenNode> nameMap;
 	
-	private int labelNum;
+	  private int labelNum;
 	
-	public CgenNode getCgenNodeByName(AbstractSymbol class_name) {
-		return nameMap.get(class_name);
-	}
+  	public CgenNode getCgenNodeByName(AbstractSymbol class_name) {
+  		return getCgenNode(class_name);
+  	}
+
+    public CgenNode getCgenNode(AbstractSymbol name){
+      CgenNode val = nameMap.get(name);
+      if(val == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode()");
+      return val;
+    }
 
     private CgenNode currentClass;
+
+    //in WORDS
+    private int SPOffsetFromFP = 1;
 
     // The following methods emit code for constants and global
     // declarations.
@@ -396,7 +405,7 @@ class CgenClassTable extends SymbolTable {
     //this includes all inherited methods and overrides all .
     private void installFeaturesInner(Vector<MethodPair> inheritedMethods, Vector<attr> inheritedAttrs, CgenNode node){
 	  	Vector<MethodPair> methods = new Vector<MethodPair>(inheritedMethods);
-      Vector<attr> attrs = new Vector<attr>(inheritedAttrs);
+      Vector<attr> attrs = new Vector<attr>();
       Vector<MethodPair> newMethods = new Vector<MethodPair>();
       for(Feature f : (ArrayList<Feature>) Collections.list(node.getFeatures().getElements())){
         if(f instanceof method){
@@ -419,9 +428,12 @@ class CgenClassTable extends SymbolTable {
       methods.addAll(newMethods);
 
 	    node.setMethods(methods);
-      node.setAttrs(attrs);
+      node.setInheritedAttrs(inheritedAttrs);
+      node.setLocalAttrs(attrs);
 	    for(CgenNode child : (ArrayList<CgenNode>) Collections.list(node.getChildren())){
-	    	installFeaturesInner(methods, attrs, child);
+        Vector<attr> allAttrs = new Vector<attr>(inheritedAttrs);
+        allAttrs.addAll(attrs);
+	    	installFeaturesInner(methods, allAttrs, child);
 	    }
     }
 
@@ -436,6 +448,8 @@ class CgenClassTable extends SymbolTable {
  	   	}
     }
 
+    //TODO: this outputs the classes in a different order than the reference.
+    //I don't THINK this that's bad?
     private void codeClassObjTab(){
     	str.print(CgenSupport.CLASSOBJTAB + CgenSupport.LABEL);
     	for(CgenNode node : nds){
@@ -500,8 +514,42 @@ class CgenClassTable extends SymbolTable {
 	    }
     }
 
+    private void codeInit(CgenNode klass){
+      //boilerplate
+      str.print(klass.name + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);
+      CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str);
+      CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str);
+      CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str);
+      CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
+      CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); //callee saves acc
+      AbstractSymbol parent = klass.getParent();
+      if(parent != TreeConstants.No_class){
+        str.print(CgenSupport.JAL);
+        str.print(parent + CgenSupport.CLASSINIT_SUFFIX);
+        str.println();
+      }
+
+      //evaluate and store local attrs
+      for(attr a : klass.getNonInheritedAttrs()){
+        if(a.init instanceof no_expr) continue;
+        a.init.code(str, this);
+        CgenSupport.emitStore(CgenSupport.ACC, klass.getAttrOffset(a.name), CgenSupport.SELF, str);
+      }
+
+      //boilerplate
+      CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //callee restores acc
+      CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str);
+      CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str);
+      CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str);
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str);
+      CgenSupport.emitReturn(str);
+    }
+
     private void codeInitializers(){
-      
+      for (CgenNode node : nds){
+        codeInit(node);
+      }
     }
 
     /** Constructs a new class table and invokes the code generator */
@@ -579,12 +627,6 @@ class CgenClassTable extends SymbolTable {
       return labelNum;
     }
 
-    public CgenNode getCgenNode(AbstractSymbol name){
-      CgenNode val = nameMap.get(name);
-      if(val == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode()");
-      return val;
-    }
-
     public void setCurrentClass(CgenNode node){
       currentClass = node;
     }
@@ -593,5 +635,45 @@ class CgenClassTable extends SymbolTable {
       if (currentClass == null) Utilities.fatalError("returning null value from CgenClassTable.getCurrentClass(). "
         + "I'm assuming this should never happen until I'm proven otherwise.");
       return currentClass;
+    }
+
+    public int getSPOffsetFromFP(){
+      return SPOffsetFromFP;
+    }
+
+    //called when entering method
+    public void resetSPOffsetFromFP(){
+      SPOffsetFromFP = 1;
+    }
+
+    public void emitPush(String reg, PrintStream s) {
+      SPOffsetFromFP++;
+      CgenSupport.emitStore(reg, 0, CgenSupport.SP, s);
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -4, s);
+    }
+
+    public void emitPop(PrintStream s) {
+      SPOffsetFromFP--;
+      if(SPOffsetFromFP < 1) Utilities.fatalError("too much popping!! CgenClassTable.emitPop()");
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 4, s);
+    }
+
+    public void emitPopR(String destRegister, PrintStream s) {
+      CgenSupport.emitLoad(destRegister, 1, CgenSupport.SP, s);
+      emitPop(s);
+    }
+
+    public void emitStoreDefaultValue(String destRegister, AbstractSymbol klass, PrintStream str){
+      if(klass == TreeConstants.Int){
+        IntSymbol intDef = (IntSymbol) AbstractTable.inttable.lookup("0");
+        CgenSupport.emitLoadInt(destRegister, intDef, str);
+      } else if (klass == TreeConstants.Bool){
+        CgenSupport.emitLoadBool(destRegister, BoolConst.falsebool, str);
+      } else if (klass == TreeConstants.Str){
+        StringSymbol strDef = (StringSymbol) AbstractTable.stringtable.lookup("");
+        CgenSupport.emitLoadString(destRegister, strDef, str);
+      } else {
+        CgenSupport.emitLoadImm(destRegister, 0, str); // void
+      }
     }
 }
