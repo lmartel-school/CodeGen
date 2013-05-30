@@ -14,6 +14,7 @@ import java.util.Vector;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.Comparator;
 /** This class represents a location in memory, given by a string register
  (usually FramePointer or SelfObject) and an int offset from that pointer.
  This class will be the values that the symboltable maps var names too. */
@@ -464,9 +465,9 @@ class method extends Feature {
 			context.addId(((formal)formals.getNth(i)).name, formalLoc);
 		}
 		
-		CgenSupport.emitPush(CgenSupport.FP, s);
-		CgenSupport.emitPush(CgenSupport.SELF, s);
-		CgenSupport.emitPush(CgenSupport.RA, s);
+		context.emitPush(CgenSupport.FP, s);
+		context.emitPush(CgenSupport.SELF, s);
+		context.emitPush(CgenSupport.RA, s);
 		
 		CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, s);
 		//set frame pointer, so formal params are easily accessible. 
@@ -805,7 +806,7 @@ class dispatch extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
-        //TODO: find right place to put this:
+        //TODO: find right place to put this (should be wherever we update FP for new frame):
         context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
 
         
@@ -813,7 +814,7 @@ class dispatch extends Expression {
 			((Expression)actual.getNth(i)).code(s, context);
 			// result of arg evaluation is an ACC, push onto stack
 			
-			CgenSupport.emitPush(CgenSupport.ACC, s);
+			context.emitPush(CgenSupport.ACC, s);
 		}
 		//CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
 		//pass callingobject in ACC, but only after checking non-null!
@@ -1005,6 +1006,23 @@ class typcase extends Expression {
         }
 	dump_type(out, n);
     }
+
+    //we use a helper method for the sort with the context
+    //marked final, in order to reference it in the inner class
+    private void sortBranchList(ArrayList<branch> branches, final CgenClassTable context){
+        Collections.sort(branches, new Comparator(){
+
+            //sort by class-tag in descending order
+            public int compare(Object first, Object second){
+                branch b1 = (branch) first;
+                branch b2 = (branch) second;
+                CgenNode n1 = context.getCgenNode(b1.type_decl);
+                CgenNode n2 = context.getCgenNode(b2.type_decl);
+                return n2.getClassTag() - n1.getClassTag();
+            }
+        });
+    }
+
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
