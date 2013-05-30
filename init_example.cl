@@ -29,8 +29,9 @@ class Dummy {
 };
 
 class Child inherits Parent {
-  attr3 : String <- "foobar";
-  attr4 : Dummy <- (new Dummy);
+  attr3: String <- "foobar";
+  attr4: String <- "baz";
+  attr5: Dummy <- (new Dummy);
 
   baz():Bool {
     false

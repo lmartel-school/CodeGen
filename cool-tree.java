@@ -1171,6 +1171,8 @@ class plus extends Expression {
 		
 		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
 		CgenSupport.emitAdd(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
+        //TODO: this needs to add the VALUES within the int objects. This adds the object pointers.
+        //Also, I think it needs to allocate a new Int object to put the sum in
 		
 		CgenSupport.emitPop(s);
     }
