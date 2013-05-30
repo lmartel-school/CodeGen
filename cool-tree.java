@@ -1523,6 +1523,26 @@ class eq extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitMove(CgenSupport.T1, CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitMove(CgenSupport.T2, CgenSupport.ACC, s);
+        //if pointers equal, return true immediately
+        int finished = context.nextLabel();
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
+        CgenSupport.emitBeq(CgenSupport.T1, CgenSupport.T2, finished, s);
+
+        CgenSupport.emitLoadBool(CgenSupport.A1, BoolConst.falsebool, s);
+        if(e1.get_type() == TreeConstants.Int
+            || e1.get_type() == TreeConstants.Str
+            || e1.get_type() == TreeConstants.Bool){
+            CgenSupport.emitJal("equality_test", s);
+        } else {
+            //not equal
+            CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+        }
+
+        CgenSupport.emitLabelDef(finished, s);
     }
 
 
