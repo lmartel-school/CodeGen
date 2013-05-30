@@ -26,6 +26,7 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.ArrayList;
 
 class MethodPair {
@@ -153,6 +154,17 @@ class CgenNode extends class_ {
         return methods;
     }
 
+    Vector<MethodPair> getNonInheritedMethods(){
+        if(methods == null){
+            Utilities.fatalError("methods list not yet set in CgenNode.getNonInheritedMethods");
+        }
+        Vector<MethodPair> nonInherited = new Vector<MethodPair>();
+        for(MethodPair mp : methods){
+            if(mp.cnode.name == this.name) nonInherited.add(mp);
+        }
+        return nonInherited;
+    }
+
     void setAttrs(Vector<attr> attrs){
         if(this.attrs != null){
             Utilities.fatalError("attrs list already set in CgenNode.setAttrs");
@@ -183,7 +195,7 @@ class CgenNode extends class_ {
 
     private void addDescendants(Set<CgenNode> descendants, CgenNode cur){
         descendants.add(cur);
-        for(CgenNode child : (ArrayList<CgenNode>) cur.getChildren()){
+        for(CgenNode child : (ArrayList<CgenNode>) Collections.list(cur.getChildren())){
             addDescendants(descendants, child);
         }
     }

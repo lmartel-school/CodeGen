@@ -55,7 +55,7 @@ class CgenClassTable extends SymbolTable {
 		return nameMap.get(class_name);
 	}
 
-    private CgenNode selfObject;
+    private CgenNode currentClass;
 
     // The following methods emit code for constants and global
     // declarations.
@@ -500,6 +500,10 @@ class CgenClassTable extends SymbolTable {
 	    }
     }
 
+    private void codeInitializers(){
+      
+    }
+
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
 			nds = new Vector<CgenNode>();
@@ -558,6 +562,7 @@ class CgenClassTable extends SymbolTable {
 			if (Flags.cgen_debug) System.out.println("coding global text");
 			codeGlobalText();
 
+      codeInitializers();
 			//                 Add your code to emit
 			//                   - object initializer
 			//                   - the class methods
@@ -580,13 +585,13 @@ class CgenClassTable extends SymbolTable {
       return val;
     }
 
-    public void setSelfObject(CgenNode node){
-      selfObject = node;
+    public void setCurrentClass(CgenNode node){
+      currentClass = node;
     }
 
-    public CgenNode getSelfObject(){
-      if (selfObject == null) Utilities.fatalError("returning null value from CgenClassTable.getSelfObject(). "
+    public CgenNode getCurrentClass(){
+      if (currentClass == null) Utilities.fatalError("returning null value from CgenClassTable.getCurrentClass(). "
         + "I'm assuming this should never happen until I'm proven otherwise.");
-      return selfObject;
+      return currentClass;
     }
 }
