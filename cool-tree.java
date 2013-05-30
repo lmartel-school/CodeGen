@@ -387,13 +387,14 @@ class class_ extends AbstractClass {
 		
 		context.enterScope();
 		CgenNode node = context.getCgenNodeByName(name);
+		if (node == null) System.out.println("LOLWUT");
         context.setCurrentClass(node);
 		Vector<attr> attrs = node.getAttrs();
 		for (int i = 0; i < attrs.size(); i++) {
 		//assuming attrs were added in order
 			Location newLoc = new Location();
 			newLoc.register = CgenSupport.SELF;
-			newLoc.offset = 12 + 4*i;
+			newLoc.offset = 3 + i;
 			context.addId(attrs.get(i).name, newLoc);
 		}
 		Vector<MethodPair> methods = node.getNonInheritedMethods();
@@ -464,6 +465,7 @@ class method extends Feature {
 			formalLoc.offset = formals.getLength() - i + 2;
 			context.addId(((formal)formals.getNth(i)).name, formalLoc);
 		}
+		context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
 		
 		context.emitPush(CgenSupport.FP, s);
 		context.emitPush(CgenSupport.SELF, s);
@@ -748,9 +750,33 @@ class static_dispatch extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
-        context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
-
-        //TODO
+	
+		for (int i = 0; i < actual.getLength(); i++) {
+			((Expression)actual.getNth(i)).code(s, context);
+			// result of arg evaluation is an ACC, push onto stack
+			
+			context.emitPush(CgenSupport.ACC, s);
+		}
+		//CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
+		//pass callingobject in ACC, but only after checking non-null!
+		expr.code(s, context);
+		int nonVoid = context.nextLabel();
+		CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
+		// if it's currently void, load error messages and jal _dispatch_abort
+		CgenSupport.emitLoadString(CgenSupport.ACC, (StringSymbol)AbstractTable.stringtable.lookup(context.getCurrentClass().filename.getString()), s);
+		CgenSupport.emitLoadImm(CgenSupport.T1, lineNumber, s);
+		CgenSupport.emitJal("_dispatch_abort", s);
+		
+		//create non-void branch
+		CgenSupport.emitLabelDef(nonVoid, s);
+		
+		CgenSupport.emitLoadAddress(CgenSupport.T1, type_name.toString() + CgenSupport.DISPTAB_SUFFIX, s);
+		//load disptable base address
+		
+		CgenSupport.emitLoad(CgenSupport.T1, context.getCurrentClass().getMethodOffset(name), CgenSupport.T1, s);
+		//index into dispTab for method address
+		
+		CgenSupport.emitJalr(CgenSupport.T1, s);
     }
 
 
@@ -806,10 +832,7 @@ class dispatch extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
-        //TODO: find right place to put this (should be wherever we update FP for new frame):
-        context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
 
-        
 		for (int i = 0; i < actual.getLength(); i++) {
 			((Expression)actual.getNth(i)).code(s, context);
 			// result of arg evaluation is an ACC, push onto stack
@@ -819,10 +842,18 @@ class dispatch extends Expression {
 		//CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
 		//pass callingobject in ACC, but only after checking non-null!
 		expr.code(s, context);
+		
+		CgenNode callerNode;
+		if (expr.get_type() == TreeConstants.SELF_TYPE) {
+			callerNode = context.getCurrentClass();
+		} else {
+			callerNode = context.getCgenNode(expr.get_type());
+		}
+		
 		int nonVoid = context.nextLabel();
 		CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
 		// if it's currently void, load error messages and jal _dispatch_abort
-		CgenSupport.emitLoadString(CgenSupport.ACC, (StringSymbol)AbstractTable.stringtable.lookup(context.getCurrentClass().filename.getString()), s);
+		CgenSupport.emitLoadString(CgenSupport.ACC, (StringSymbol)AbstractTable.stringtable.lookup(callerNode.filename.getString()), s);
 		CgenSupport.emitLoadImm(CgenSupport.T1, lineNumber, s);
 		CgenSupport.emitJal("_dispatch_abort", s);
 		
@@ -832,7 +863,7 @@ class dispatch extends Expression {
 		CgenSupport.emitLoad(CgenSupport.T1, CgenSupport.DISPTABLE_OFFSET, CgenSupport.ACC, s);
 		//load disptable base address
 		
-		CgenSupport.emitLoad(CgenSupport.T1, context.getCurrentClass().getMethodOffset(name), CgenSupport.T1, s);
+		CgenSupport.emitLoad(CgenSupport.T1, callerNode.getMethodOffset(name), CgenSupport.T1, s);
 		//index into dispTab for method address
 		
 		CgenSupport.emitJalr(CgenSupport.T1, s);

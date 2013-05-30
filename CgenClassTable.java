@@ -533,8 +533,10 @@ class CgenClassTable extends SymbolTable {
       //evaluate and store local attrs
       for(attr a : klass.getNonInheritedAttrs()){
         if(a.init instanceof no_expr) continue;
+		setCurrentClass(klass);
         a.init.code(str, this);
         CgenSupport.emitStore(CgenSupport.ACC, klass.getAttrOffset(a.name), CgenSupport.SELF, str);
+		setCurrentClass(null);
       }
 
       //boilerplate
