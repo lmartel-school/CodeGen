@@ -26,6 +26,7 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Collections;
 import java.util.ArrayList;
 
 class MethodPair {
@@ -194,7 +195,7 @@ class CgenNode extends class_ {
 
     private void addDescendants(Set<CgenNode> descendants, CgenNode cur){
         descendants.add(cur);
-        for(CgenNode child : (ArrayList<CgenNode>) cur.getChildren()){
+        for(CgenNode child : (ArrayList<CgenNode>) Collections.list(cur.getChildren())){
             addDescendants(descendants, child);
         }
     }

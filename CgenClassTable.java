@@ -500,6 +500,10 @@ class CgenClassTable extends SymbolTable {
 	    }
     }
 
+    private void codeInitializers(){
+      
+    }
+
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
 			nds = new Vector<CgenNode>();
@@ -558,6 +562,7 @@ class CgenClassTable extends SymbolTable {
 			if (Flags.cgen_debug) System.out.println("coding global text");
 			codeGlobalText();
 
+      codeInitializers();
 			//                 Add your code to emit
 			//                   - object initializer
 			//                   - the class methods

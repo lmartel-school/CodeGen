@@ -29,8 +29,8 @@ class Dummy {
 };
 
 class Child inherits Parent {
-  attr3 : String;
-  attr4 : Dummy;
+  attr3 : String <- "foobar";
+  attr4 : Dummy <- (new Dummy);
 
   baz():Bool {
     false
@@ -56,7 +56,7 @@ class Grandchild inherits Child {
 };
 
 class Parent {
-  attr1 : Int;
+  attr1 : Int <- foo();
   attr2 : Bool;
 
   bar():Bool {
