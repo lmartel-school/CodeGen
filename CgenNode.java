@@ -180,6 +180,13 @@ class CgenNode extends class_ {
         return attrs;
     }
 
+    int getAttrOffset(AbstractSymbol attrName){
+        for(int i = 0; i < attrs.size(); i++){
+            if(attrs.get(i).name == attrName) return CgenSupport.WORD_SIZE * (3 + i);
+        }
+        return -1;
+    }
+
     int getMethodOffset(AbstractSymbol methodName){
         for(int i = 0; i < methods.size(); i++){
             if(methods.get(i).met.name == methodName) return CgenSupport.WORD_SIZE * i; 

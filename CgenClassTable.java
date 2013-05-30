@@ -500,8 +500,35 @@ class CgenClassTable extends SymbolTable {
 	    }
     }
 
+    private void codeInit(CgenNode klass){
+      str.print(klass.name + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);
+      CgenSupport.emitStore(CgenSupport.FP, 12, CgenSupport.SP, str);
+      CgenSupport.emitStore(CgenSupport.SELF, 8, CgenSupport.SP, str);
+      CgenSupport.emitStore(CgenSupport.RA, 4, CgenSupport.SP, str);
+      CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
+      CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); //callee saves acc
+      AbstractSymbol parent = klass.getParent();
+      if(parent != TreeConstants.No_class){
+        str.print(CgenSupport.JAL);
+        str.print(parent + CgenSupport.CLASSINIT_SUFFIX);
+        str.println();
+      }
+
+      //TODO: filter attrs to only local ones, evaluate and store them
+
+      CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //callee restores acc
+      CgenSupport.emitLoad(CgenSupport.FP, 12, CgenSupport.SP, str);
+      CgenSupport.emitLoad(CgenSupport.SELF, 8, CgenSupport.SP, str);
+      CgenSupport.emitLoad(CgenSupport.RA, 4, CgenSupport.SP, str);
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str);
+      CgenSupport.emitReturn(str);
+    }
+
     private void codeInitializers(){
-      
+      for (CgenNode node : nds){
+        codeInit(node);
+      }
     }
 
     /** Constructs a new class table and invokes the code generator */
