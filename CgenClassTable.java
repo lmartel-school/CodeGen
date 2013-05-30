@@ -49,13 +49,22 @@ class CgenClassTable extends SymbolTable {
     //static type -> CgenNode (used in dispatch, maybe other places)
     private LinkedHashMap<AbstractSymbol, CgenNode> nameMap;
 	
-	private int labelNum;
+	  private int labelNum;
 	
-	public CgenNode getCgenNodeByName(AbstractSymbol class_name) {
-		return nameMap.get(class_name);
-	}
+  	public CgenNode getCgenNodeByName(AbstractSymbol class_name) {
+  		return getCgenNode(class_name);
+  	}
+
+    public CgenNode getCgenNode(AbstractSymbol name){
+      CgenNode val = nameMap.get(name);
+      if(val == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode()");
+      return val;
+    }
 
     private CgenNode currentClass;
+
+    //in WORDS
+    private int SPOffsetFromFP = 1;
 
     // The following methods emit code for constants and global
     // declarations.
@@ -618,12 +627,6 @@ class CgenClassTable extends SymbolTable {
       return labelNum;
     }
 
-    public CgenNode getCgenNode(AbstractSymbol name){
-      CgenNode val = nameMap.get(name);
-      if(val == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode()");
-      return val;
-    }
-
     public void setCurrentClass(CgenNode node){
       currentClass = node;
     }
@@ -632,5 +635,45 @@ class CgenClassTable extends SymbolTable {
       if (currentClass == null) Utilities.fatalError("returning null value from CgenClassTable.getCurrentClass(). "
         + "I'm assuming this should never happen until I'm proven otherwise.");
       return currentClass;
+    }
+
+    public int getSPOffsetFromFP(){
+      return SPOffsetFromFP;
+    }
+
+    //called when entering method
+    public void resetSPOffsetFromFP(){
+      SPOffsetFromFP = 1;
+    }
+
+    public void emitPush(String reg, PrintStream s) {
+      SPOffsetFromFP++;
+      CgenSupport.emitStore(reg, 0, CgenSupport.SP, s);
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -4, s);
+    }
+
+    public void emitPop(PrintStream s) {
+      SPOffsetFromFP--;
+      if(SPOffsetFromFP < 1) Utilities.fatalError("too much popping!! CgenClassTable.emitPop()");
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 4, s);
+    }
+
+    public void emitPopR(String destRegister, PrintStream s) {
+      CgenSupport.emitLoad(destRegister, 1, CgenSupport.SP, s);
+      emitPop(s);
+    }
+
+    public void emitStoreDefaultValue(String destRegister, AbstractSymbol klass, PrintStream str){
+      if(klass == TreeConstants.Int){
+        IntSymbol intDef = (IntSymbol) AbstractTable.inttable.lookup("0");
+        CgenSupport.emitLoadInt(destRegister, intDef, str);
+      } else if (klass == TreeConstants.Bool){
+        CgenSupport.emitLoadBool(destRegister, BoolConst.falsebool, str);
+      } else if (klass == TreeConstants.Str){
+        StringSymbol strDef = (StringSymbol) AbstractTable.stringtable.lookup("");
+        CgenSupport.emitLoadString(destRegister, strDef, str);
+      } else {
+        CgenSupport.emitLoadImm(destRegister, 0, str); // void
+      }
     }
 }

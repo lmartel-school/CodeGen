@@ -452,15 +452,15 @@ class method extends Feature {
 	
 	public void code(PrintStream s, CgenClassTable context) {
 		s.println("TODO: enter formal params into context");
-		CgenSupport.emitPush(CgenSupport.FP, s);
-		CgenSupport.emitPush(CgenSupport.SELF, s);
-		CgenSupport.emitPush(CgenSupport.RA, s);
+		context.emitPush(CgenSupport.FP, s);
+		context.emitPush(CgenSupport.SELF, s);
+		context.emitPush(CgenSupport.RA, s);
 		
 		expr.code(s, context);
 		
-		CgenSupport.emitPopR(CgenSupport.RA, s);
-		CgenSupport.emitPopR(CgenSupport.SELF, s);
-		CgenSupport.emitPopR(CgenSupport.FP, s);
+		context.emitPopR(CgenSupport.RA, s);
+		context.emitPopR(CgenSupport.SELF, s);
+		context.emitPopR(CgenSupport.FP, s);
 		CgenSupport.emitReturn(s);
 	}
 
@@ -592,6 +592,7 @@ class branch extends Case {
 
         int expression = context.nextLabel();
         int giveUp = context.nextLabel();
+
         for(CgenNode guess : validTypes){
             CgenSupport.emitLoadImm(CgenSupport.T1, guess.getClassTag(), s);
             CgenSupport.emitBeq(CgenSupport.T1, CgenSupport.T2, expression, s);
@@ -602,13 +603,16 @@ class branch extends Case {
         CgenSupport.emitLabelDef(expression, s);
         //match found! execute expression, jump to end of branches
 
-        //TODO: ADD BRANCH VARIABLE TO ENVIRONMENT.
-        Location branchVarLoc = new Location();
-        //what's the best way to do this? I'm thinking an absolute memory location on the stack,
-        //but we'll need to add a bit to Location to make that work
+        //put the branch var on the stack, record its location
+        Location branchVarLoc = new Location(CgenSupport.FP, context.getSPOffsetFromFP());
+        context.emitPush(CgenSupport.ACC, s);
+        context.enterScope();
         context.addId(name, branchVarLoc);
 
         expr.code(s, context);
+
+        context.exitScope();
+        context.emitPop(s);
         CgenSupport.emitBranch(finished, s);
 
         //match not found, try another branch
@@ -723,6 +727,9 @@ class static_dispatch extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+        context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
+
+        //TODO
     }
 
 
@@ -778,6 +785,9 @@ class dispatch extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+        context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
+
+        //TODO
     }
 
 
@@ -1117,6 +1127,21 @@ class let extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+        if(!(init instanceof no_expr)){
+            init.code(s, context);
+        } else {
+            context.emitStoreDefaultValue(CgenSupport.ACC, type_decl, s);
+        }
+
+        Location letVarLoc = new Location(CgenSupport.FP, context.getSPOffsetFromFP());
+        context.emitPush(CgenSupport.ACC, s);
+        context.enterScope();
+        context.addId(identifier, letVarLoc);
+
+        body.code(s, context);
+
+        context.exitScope();
+        context.emitPop(s);
     }
 
 
@@ -1165,7 +1190,7 @@ class plus extends Expression {
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		CgenSupport.emitPush(CgenSupport.ACC, s);
+		context.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
@@ -1174,7 +1199,7 @@ class plus extends Expression {
         //TODO: this needs to add the VALUES within the int objects. This adds the object pointers.
         //Also, I think it needs to allocate a new Int object to put the sum in
 		
-		CgenSupport.emitPop(s);
+		context.emitPop(s);
     }
 
 
@@ -1223,14 +1248,14 @@ class sub extends Expression {
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		CgenSupport.emitPush(CgenSupport.ACC, s);
+		context.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
 		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
 		CgenSupport.emitSub(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
 		
-		CgenSupport.emitPop(s);
+		context.emitPop(s);
     }
 
 
@@ -1279,14 +1304,14 @@ class mul extends Expression {
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		CgenSupport.emitPush(CgenSupport.ACC, s);
+		context.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
 		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
 		CgenSupport.emitMul(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
 		
-		CgenSupport.emitPop(s);
+		context.emitPop(s);
     }
 
 
@@ -1335,14 +1360,14 @@ class divide extends Expression {
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
 		// result in ACC, so push it on stack
-		CgenSupport.emitPush(CgenSupport.ACC, s);
+		context.emitPush(CgenSupport.ACC, s);
 		
 		e2.code(s, context);
 		
 		CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
 		CgenSupport.emitDiv(CgenSupport.ACC, CgenSupport.T1, CgenSupport.ACC, s);
 		
-		CgenSupport.emitPop(s);
+		context.emitPop(s);
     }
 
 
@@ -1437,7 +1462,7 @@ class lt extends Expression {
         int trueBranch = context.nextLabel();
         int endBranch = context.nextLabel();
         e1.code(s, context);
-        CgenSupport.emitPush(CgenSupport.ACC, s);
+        context.emitPush(CgenSupport.ACC, s);
         e2.code(s, context);
         CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
         CgenSupport.emitBlt(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
@@ -1451,7 +1476,7 @@ class lt extends Expression {
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
 
         CgenSupport.emitLabelDef(endBranch, s);
-        CgenSupport.emitPop(s); //pop stored value (e1) off stack
+        context.emitPop(s); //pop stored value (e1) off stack
     }
 
 
@@ -1549,7 +1574,7 @@ class leq extends Expression {
         int trueBranch = context.nextLabel();
         int endBranch = context.nextLabel();
         e1.code(s, context);
-        CgenSupport.emitPush(CgenSupport.ACC, s);
+        context.emitPush(CgenSupport.ACC, s);
         e2.code(s, context);
         CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
         CgenSupport.emitBleq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
@@ -1563,7 +1588,7 @@ class leq extends Expression {
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
 
         CgenSupport.emitLabelDef(endBranch, s);
-        CgenSupport.emitPop(s); //pop stored value (e1) off stack
+        context.emitPop(s); //pop stored value (e1) off stack
     }
 
 
@@ -1795,7 +1820,7 @@ class new_ extends Expression {
 			
 			//add offset to address of objext table
 			CgenSupport.emitAddu(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
-			CgenSupport.emitPush(CgenSupport.T1, s);
+			context.emitPush(CgenSupport.T1, s);
 			//store address on stack, so it isn't overwritten during copy.
 			CgenSupport.emitLoad(CgenSupport.ACC, 0, CgenSupport.T1, s);
 			//copied object address in ACC, run Object.copy
@@ -1806,7 +1831,7 @@ class new_ extends Expression {
 			CgenSupport.emitJalr(CgenSupport.T1, s);
 			// ^ this calls the init method, and leaves the value in ACC
 			// just pop the value we pushed and we're done.
-			CgenSupport.emitPop(s);
+			context.emitPop(s);
 		} else {
 			CgenSupport.emitLoadAddress(CgenSupport.ACC, type_name + CgenSupport.PROTOBJ_SUFFIX, s);
 			//proto obj is in a0, call Object.copy to make a copy.

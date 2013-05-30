@@ -472,12 +472,18 @@ class CgenSupport {
 	s.println("");
     }
 
+
+    /**** 
+    These have been marked private to restrict their use. Call these only through the
+    classtable interface in order to ensure our SP tracker remains up-to-date.
+    *****/
+
     /** Emit a sequence of instructions to push a register onto stack.
      * Stack grows toward smaller addresses.
      * @param reg the register
      * @param s the output stream
      * */
-    static void emitPush(String reg, PrintStream s) {
+    private static void emitPush(String reg, PrintStream s) {
 	emitStore(reg, 0, SP, s);
 	emitAddiu(SP, SP, -4, s);
     }
@@ -486,13 +492,13 @@ class CgenSupport {
 	 *	The value is not saved in a register, it is the caller's 
 	 *	responsibility to use the value and only pop once done with it.
 	 * */
-	static void emitPop(PrintStream s) {
+	private static void emitPop(PrintStream s) {
 		emitAddiu(SP, SP, 4, s);
 	}
 	/** emit code to pop one 4 byte word from the top of the stack
 		and save it in the named register. This is equivalent to calling LW on the top of the stack into a register, then 
 		calling the normal pop defined above. */
-	static void emitPopR(String destRegister, PrintStream s) {
+	private static void emitPopR(String destRegister, PrintStream s) {
 		emitLoad(destRegister, 1, SP, s);
 		emitPop(s);
 	}
