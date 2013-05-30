@@ -43,9 +43,13 @@ class Main {
 		(new Child).baz()
 	};
 	
-	lotsOfParams(first : Int, second : Int, third : Int, fourth : Int, fifth : Int) : Int {
-		first + second + third + fourth + fifth
-	};
+	lotsOfParams(first : Int, second : Int, third : Int, fourth : Int, fifth : Int) : Int {{
+		first;
+		second;
+		third;
+		fourth;
+		fifth;
+	}};
 	
 	callingLots() : Int {
 		lotsOfParams(1, 2, 3, 4, 5)

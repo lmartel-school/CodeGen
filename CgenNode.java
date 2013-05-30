@@ -182,7 +182,7 @@ class CgenNode extends class_ {
 
     int getMethodOffset(AbstractSymbol methodName){
         for(int i = 0; i < methods.size(); i++){
-            if(methods.get(i).met.name == methodName) return CgenSupport.WORD_SIZE * i; 
+            if(methods.get(i).met.name == methodName) return i; 
         }
         return -1;
     }

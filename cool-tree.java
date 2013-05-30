@@ -387,12 +387,13 @@ class class_ extends AbstractClass {
 		context.enterScope();
 		CgenNode node = context.getCgenNodeByName(name);
         context.setCurrentClass(node);
-		for (int i = 0; i < node.getAttrs().size(); i++) {
+		Vector<attr> attrs = node.getAttrs();
+		for (int i = 0; i < attrs.size(); i++) {
 		//assuming attrs were added in order
 			Location newLoc = new Location();
 			newLoc.register = CgenSupport.SELF;
 			newLoc.offset = 12 + 4*i;
-			context.addId(node.getAttrs().get(i).name, newLoc);
+			context.addId(attrs.get(i).name, newLoc);
 		}
 		Vector<MethodPair> methods = node.getNonInheritedMethods();
 		for (int i = 0; i < methods.size(); i++) {
@@ -459,7 +460,7 @@ class method extends Feature {
 		for (int i = 0; i < formals.getLength(); i++) {
 			Location formalLoc = new Location();
 			formalLoc.register = CgenSupport.FP;
-			formalLoc.offset = 3 + i;
+			formalLoc.offset = formals.getLength() - i + 2;
 			context.addId(((formal)formals.getNth(i)).name, formalLoc);
 		}
 		
@@ -797,6 +798,33 @@ class dispatch extends Expression {
       * @param s the output stream 
       * */
     public void code(PrintStream s, CgenClassTable context) {
+		for (int i = 0; i < actual.getLength(); i++) {
+			((Expression)actual.getNth(i)).code(s, context);
+			// result of arg evaluation is an ACC, push onto stack
+			
+			CgenSupport.emitPush(CgenSupport.ACC, s);
+		}
+		//CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
+		//pass callingobject in ACC, but only after checking non-null!
+		expr.code(s, context);
+		int nonVoid = context.nextLabel();
+		CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
+		// if it's currently void, load error messages and jal _dispatch_abort
+		CgenSupport.emitLoadString(CgenSupport.ACC, (StringSymbol)AbstractTable.stringtable.lookup(context.getCurrentClass().filename.getString()), s);
+		CgenSupport.emitLoadImm(CgenSupport.T1, lineNumber, s);
+		CgenSupport.emitJal("_dispatch_abort", s);
+		
+		//create non-void branch
+		CgenSupport.emitLabelDef(nonVoid, s);
+		
+		CgenSupport.emitLoad(CgenSupport.T1, CgenSupport.DISPTABLE_OFFSET, CgenSupport.ACC, s);
+		//load disptable base address
+		
+		CgenSupport.emitLoad(CgenSupport.T1, context.getCurrentClass().getMethodOffset(name), CgenSupport.T1, s);
+		//index into dispTab for method address
+		
+		CgenSupport.emitJalr(CgenSupport.T1, s);
+		
     }
 
 
@@ -979,7 +1007,7 @@ class typcase extends Expression {
         //we have expr's static type, so we get all possible children. At each branch,
         //we narrow our list of all possible children down to those that are valid descendants of
         //<branch-type>, then compare classtags to see if we have a match.
-
+/*
         ArrayList<branch> branches = (ArrayList<branch>) Collections.list(cases.getElements());
         
         sortBranchList(branches, context);
@@ -1016,7 +1044,7 @@ class typcase extends Expression {
         CgenSupport.emitJal("_case_abort", s);
 
         CgenSupport.emitLabelDef(finished, s);
-		
+		*/
     }
 
 
