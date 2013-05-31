@@ -631,7 +631,7 @@ class CUP$ASTParser$actions {
           /*. . . . . . . . . . . . . . . . . . . .*/
           case 16: // formal ::= LINENO FORMAL ID ID 
             {
-              AbstractFormal RESULT =null;
+              Formal RESULT =null;
 		Integer l = (Integer)((java_cup.runtime.Symbol) CUP$ASTParser$stack.elementAt(CUP$ASTParser$top-3)).value;
 		AbstractSymbol n = (AbstractSymbol)((java_cup.runtime.Symbol) CUP$ASTParser$stack.elementAt(CUP$ASTParser$top-1)).value;
 		AbstractSymbol t = (AbstractSymbol)((java_cup.runtime.Symbol) CUP$ASTParser$stack.peek()).value;
@@ -645,7 +645,7 @@ class CUP$ASTParser$actions {
             {
               Formals RESULT =null;
 		Formals fl = (Formals)((java_cup.runtime.Symbol) CUP$ASTParser$stack.elementAt(CUP$ASTParser$top-1)).value;
-		AbstractFormal f = (AbstractFormal)((java_cup.runtime.Symbol) CUP$ASTParser$stack.peek()).value;
+		Formal f = (Formal)((java_cup.runtime.Symbol) CUP$ASTParser$stack.peek()).value;
 		 RESULT = fl.appendElement(f); 
               CUP$ASTParser$result = parser.getSymbolFactory().newSymbol("formal_list",7, RESULT);
             }
@@ -655,7 +655,7 @@ class CUP$ASTParser$actions {
           case 14: // formal_list ::= formal 
             {
               Formals RESULT =null;
-		AbstractFormal f = (AbstractFormal)((java_cup.runtime.Symbol) CUP$ASTParser$stack.peek()).value;
+		Formal f = (Formal)((java_cup.runtime.Symbol) CUP$ASTParser$stack.peek()).value;
 		 RESULT = (new Formals(curr_lineno.intValue())).appendElement(f); 
               CUP$ASTParser$result = parser.getSymbolFactory().newSymbol("formal_list",7, RESULT);
             }

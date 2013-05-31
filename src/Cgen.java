@@ -56,7 +56,7 @@ class Cgen {
 		}
 	    }
 
-	    ((AbstractProgram)result).cgen(output);
+	    ((Program)result).cgen(output);
 	} catch (Exception ex) {
 	    ex.printStackTrace(System.err);
 	}

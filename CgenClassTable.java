@@ -380,7 +380,7 @@ class CgenClassTable extends SymbolTable {
 
     private void installClasses(Classes cs) {
       for (Enumeration e = cs.getElements(); e.hasMoreElements(); ) {
-	    installClass(new CgenNode((AbstractClass)e.nextElement(), 
+	    installClass(new CgenNode((Class_)e.nextElement(), 
 				CgenNode.NotBasic, this));
       }
     }
