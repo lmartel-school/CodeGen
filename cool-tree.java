@@ -774,7 +774,7 @@ class static_dispatch extends Expression {
 		CgenSupport.emitLoadAddress(CgenSupport.T1, type_name.toString() + CgenSupport.DISPTAB_SUFFIX, s);
 		//load disptable base address
 		
-		CgenSupport.emitLoad(CgenSupport.T1, context.getCurrentClass().getMethodOffset(name), CgenSupport.T1, s);
+		CgenSupport.emitLoad(CgenSupport.T1, context.getCgenNode(type_name).getMethodOffset(name), CgenSupport.T1, s);
 		//index into dispTab for method address
 		
 		CgenSupport.emitJalr(CgenSupport.T1, s);

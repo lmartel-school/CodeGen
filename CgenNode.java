@@ -206,13 +206,18 @@ class CgenNode extends class_ {
         for(int i = 0; i < attrs.size(); i++){
             if(attrs.get(i).name == attrName) return (3 + i);
         }
+        Utilities.fatalError("can't find attr in CgenNode.getAttrOffset");
         return -1;
     }
 
     int getMethodOffset(AbstractSymbol methodName){
         for(int i = 0; i < methods.size(); i++){
-            if(methods.get(i).met.name == methodName) return i; 
+            if(methods.get(i).met.name == methodName) {
+                //Utilities.fatalError("found your " + i + ", bitch");
+                return i; 
+            }
         }
+        Utilities.fatalError("can't find method in CgenNode.getMethodOffset");
         return -1;
     }
 
