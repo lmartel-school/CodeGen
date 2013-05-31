@@ -690,7 +690,11 @@ class assign extends Expression {
 		expr.code(s, context);
 		//result is in ACC
 		Location varLoc = (Location)context.lookup(name);
-		CgenSupport.emitStore(CgenSupport.ACC, varLoc.offset, varLoc.register, s);		
+		CgenSupport.emitStore(CgenSupport.ACC, varLoc.offset, varLoc.register, s);
+        if(Flags.cgen_Memmgr == 1){
+            CgenSupport.emitAddiu(CgenSupport.A1, varLoc.register, 4 * varLoc.offset, s);
+            CgenSupport.emitGCAssign(s);		
+        }
     }
 
 
@@ -923,10 +927,9 @@ class cond extends Expression {
         int elseBranch = context.nextLabel();
         int endBranch = context.nextLabel();
         pred.code(s, context);
-        //CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.falsebool, s);
         CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
         CgenSupport.emitBeqz(CgenSupport.T1, elseBranch, s);
-        //CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, elseBranch, s);
+
         //"then" (true) branch
         then_exp.code(s, context);
         CgenSupport.emitBranch(endBranch, s);
@@ -989,8 +992,9 @@ class loop extends Expression {
 
         //evaluate pred, jump to end if not true
         pred.code(s, context);
-        CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.truebool, s);
-        CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.T1, finished, s);
+        
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        CgenSupport.emitBeqz(CgenSupport.T1, finished, s);
 
         //otherwise, pred is true, so evaluate body and loop again:
         body.code(s, context);
@@ -1800,18 +1804,20 @@ class comp extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
         e1.code(s, context);
-        CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.truebool, s);
-        int trueBranch = context.nextLabel();
+        
+        int falseBranch = context.nextLabel();
         int endBranch = context.nextLabel();
-        CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
-
-        //"exp is false" branch
-        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
-        CgenSupport.emitBranch(endBranch, s);
+        
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        CgenSupport.emitBeqz(CgenSupport.T1, falseBranch, s);
 
         //"exp is true" branch
-        CgenSupport.emitLabelDef(trueBranch, s);
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
+        CgenSupport.emitBranch(endBranch, s);
+
+        //"exp is false" branch
+        CgenSupport.emitLabelDef(falseBranch, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);
 
         CgenSupport.emitLabelDef(endBranch, s);
     }

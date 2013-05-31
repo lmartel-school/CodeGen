@@ -550,7 +550,11 @@ class CgenClassTable extends SymbolTable {
 		    setCurrentClass(klass);
         a.init.code(str, this);
         CgenSupport.emitStore(CgenSupport.ACC, klass.getAttrOffset(a.name), CgenSupport.SELF, str);
-		    setCurrentClass(null);
+		    if(Flags.cgen_Memmgr == 1){
+            CgenSupport.emitAddiu(CgenSupport.A1, CgenSupport.SELF, 4 * klass.getAttrOffset(a.name), str);
+            CgenSupport.emitGCAssign(str);    
+        }
+        setCurrentClass(null);
       }
 
       //boilerplate

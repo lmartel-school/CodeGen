@@ -184,12 +184,14 @@ isvoid
 let
 case
 
-TODO:
-figure out why case isn't binding the variable properly
 
-EVENTUAL TODO:
-garbage collector:
-you have to add stuff to variable assignments
-you can only push heap objects onto the stack
-
-adjust fp offset before returning from dispatch
+LIST OF EXAMPLES WE PASS
+------------------------
+arith.cl
+life.cl
+cool.cl
+primes.cl
+(graph.cl is dumb)
+book_list.cl
+sort_list.cl
+racecar.cl
