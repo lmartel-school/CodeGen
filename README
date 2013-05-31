@@ -171,11 +171,12 @@ let (1 var w/init)
 eq
 leq
 lt
-+/-
+arith
 cond
 
 dispatch with parameter
 neg
+loop
 
 TODO:
 figure out why case isn't binding the variable properly
