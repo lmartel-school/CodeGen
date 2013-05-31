@@ -20,3 +20,6 @@ xspim
 # note that we are NOT ignoring src, since I (temporarily) changed a few things (see README)
 # I also made a local hardlink to cool-tree, so I am ignoring that:
 src/cool-tree.java
+
+# ignore tests because truman's myth is weird
+run_tests.sh

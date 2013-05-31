@@ -438,14 +438,16 @@ class CgenClassTable extends SymbolTable {
 	    }
     }
 
-    private void codeClassNameTab(int objectTagOffset) {
+    private void codeClassNameTab() {
     	str.print(CgenSupport.CLASSNAMETAB + CgenSupport.LABEL);
     	for(int i = 0; i < nds.size(); i++){
     		CgenNode node = nds.get(i);
     		node.setClassTag(i);
         tagMap.put(i, node);
         nameMap.put(node.name, node);
- 	   		str.println(CgenSupport.WORD + CgenSupport.STRCONST_PREFIX + (i + objectTagOffset));
+ 	   		str.print(CgenSupport.WORD);
+        ((StringSymbol) AbstractTable.stringtable.lookup(node.name.toString())).codeRef(str);
+        str.println();
  	   	}
     }
 
@@ -613,8 +615,7 @@ class CgenClassTable extends SymbolTable {
 			//                   - class_nameTab (check)
 			//                   - dispatch tables (check)
 
-			//is there a better way to get the str_const[Object] value?
-			codeClassNameTab(5);
+			codeClassNameTab();
 
 			codeClassObjTab();
 
