@@ -172,3 +172,7 @@ eq
 leq
 lt
 +/-
+cond
+
+dispatch with parameter
+neg
