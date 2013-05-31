@@ -335,7 +335,7 @@ class Main inherits IO {
      (let z : A2I <- new A2I in
   {
      out_string(z.i2a(var.value()));
-     out_string(" ###");
+     out_string(" ");
   }
      )
    };
@@ -348,7 +348,6 @@ class Main inherits IO {
          -- avar <- (new A).set_var(get_int());
          out_string("number ");
          print(avar);
-         out_string("\n Checking is_even...\n");
          if is_even(avar.value()) then
             out_string("is even!\n")
          else
@@ -362,7 +361,9 @@ class Main inherits IO {
                         a_var <- (new A).set_var(get_int());
                   avar <- (new B).method2(avar.value(), a_var.value());
                } else
-                  if char = "b" then -- negate
+                  if char = "b" then {
+                      -- negate
+                     out_string("\n Beginning case...\n");
                      case avar of
                      c : C => avar <- c.method6(c.value());
                      a : A => avar <- a.method3(a.value());
@@ -370,7 +371,9 @@ class Main inherits IO {
                       out_string("Oooops\n");
                       abort(); 0;
                    };
-                     esac else
+                     esac;
+                     out_string("\n Survived case!!!\n"); 
+                  } else
                   if char = "c" then -- diff
                      {
                         a_var <- (new A).set_var(get_int());

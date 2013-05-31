@@ -176,3 +176,6 @@ cond
 
 dispatch with parameter
 neg
+
+TODO:
+figure out why case isn't binding the variable properly
