@@ -10,6 +10,7 @@ cgen
 
 # ignore spim softlink because it doesn't work through git
 spim
+xspim
 
 # ignore symbol files to avoid confusion -- just re-run the tests
 *.s

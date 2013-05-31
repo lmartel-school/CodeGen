@@ -2,8 +2,8 @@ make
 rm test/*.ref.s -f
 rm test/*.our.s -f
 mv test/*.cl .
-FILES="*.cl"
-# FILES="hello_world.cl"
+# FILES="*.cl"
+FILES="simple_let.cl"
 for f in $FILES
 do
   echo "reference codegen: $f..."
