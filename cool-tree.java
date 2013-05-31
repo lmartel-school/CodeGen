@@ -1273,26 +1273,27 @@ class plus extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
-		// result in ACC, so push it on stack
-		context.emitPush(CgenSupport.ACC, s);
+
+		context.emitPush(CgenSupport.ACC, s); //push result 1 onto stack
 		
 		e2.code(s, context);
-		
-		CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load e1 Int object into T1
-        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
-        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 VALUE into T2
-        CgenSupport.emitAdd(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
-        context.emitPush(CgenSupport.T3, s); //save sum on the stack
+
+        context.emitPush(CgenSupport.ACC, s); //push result 2
 
         //create new int object
         new_ newInt = new new_(this.getLineNumber(), TreeConstants.Int);
         newInt.code(s, context);
-        //load result into new int
-        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load saved sum into T1
-        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //load sum into new int's value attr
 
-        context.emitPop(s);
-		context.emitPop(s);
+        context.emitPopR(CgenSupport.T2, s); //load e2 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.T2, s); //load e2 VALUE into T2
+    
+        context.emitPopR(CgenSupport.T1, s); //load e1 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
+        
+        CgenSupport.emitAdd(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
+
+        //load result into new int
+        CgenSupport.emitStore(CgenSupport.T3, 3, CgenSupport.ACC, s); //load result into new int's value attr
     }
 
 
@@ -1340,26 +1341,27 @@ class sub extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
-        // result in ACC, so push it on stack
-        context.emitPush(CgenSupport.ACC, s);
+
+        context.emitPush(CgenSupport.ACC, s); //push result 1 onto stack
         
         e2.code(s, context);
-        
-        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load e1 Int object into T1
-        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
-        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 VALUE into T2
-        CgenSupport.emitSub(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
-        context.emitPush(CgenSupport.T3, s); //save result on the stack
+
+        context.emitPush(CgenSupport.ACC, s); //push result 2
 
         //create new int object
         new_ newInt = new new_(this.getLineNumber(), TreeConstants.Int);
         newInt.code(s, context);
-        //load result into new int
-        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load saved result into T1
-        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //load result into new int's value attr
 
-        context.emitPop(s);
-        context.emitPop(s);
+        context.emitPopR(CgenSupport.T2, s); //load e2 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.T2, s); //load e2 VALUE into T2
+    
+        context.emitPopR(CgenSupport.T1, s); //load e1 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
+        
+        CgenSupport.emitSub(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
+
+        //load result into new int
+        CgenSupport.emitStore(CgenSupport.T3, 3, CgenSupport.ACC, s); //load result into new int's value attr
     }
 
 
@@ -1407,26 +1409,27 @@ class mul extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
-        // result in ACC, so push it on stack
-        context.emitPush(CgenSupport.ACC, s);
+
+        context.emitPush(CgenSupport.ACC, s); //push result 1 onto stack
         
         e2.code(s, context);
-        
-        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load e1 Int object into T1
-        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
-        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 VALUE into T2
-        CgenSupport.emitMul(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
-        context.emitPush(CgenSupport.T3, s); //save result on the stack
+
+        context.emitPush(CgenSupport.ACC, s); //push result 2
 
         //create new int object
         new_ newInt = new new_(this.getLineNumber(), TreeConstants.Int);
         newInt.code(s, context);
-        //load result into new int
-        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load saved result into T1
-        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //load result into new int's value attr
 
-        context.emitPop(s);
-        context.emitPop(s);
+        context.emitPopR(CgenSupport.T2, s); //load e2 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.T2, s); //load e2 VALUE into T2
+    
+        context.emitPopR(CgenSupport.T1, s); //load e1 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
+        
+        CgenSupport.emitMul(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
+
+        //load result into new int
+        CgenSupport.emitStore(CgenSupport.T3, 3, CgenSupport.ACC, s); //load result into new int's value attr
     }
 
 
@@ -1474,26 +1477,27 @@ class divide extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
 		e1.code(s, context);
-        // result in ACC, so push it on stack
-        context.emitPush(CgenSupport.ACC, s);
+
+        context.emitPush(CgenSupport.ACC, s); //push result 1 onto stack
         
         e2.code(s, context);
-        
-        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load e1 Int object into T1
-        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
-        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 VALUE into T2
-        CgenSupport.emitDiv(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
-        context.emitPush(CgenSupport.T3, s); //save result on the stack
+
+        context.emitPush(CgenSupport.ACC, s); //push result 2
 
         //create new int object
         new_ newInt = new new_(this.getLineNumber(), TreeConstants.Int);
         newInt.code(s, context);
-        //load result into new int
-        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load saved result into T1
-        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //load result into new int's value attr
 
-        context.emitPop(s);
-        context.emitPop(s);
+        context.emitPopR(CgenSupport.T2, s); //load e2 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.T2, s); //load e2 VALUE into T2
+    
+        context.emitPopR(CgenSupport.T1, s); //load e1 Int object into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
+        
+        CgenSupport.emitDiv(CgenSupport.T3, CgenSupport.T1, CgenSupport.T2, s);
+
+        //load result into new int
+        CgenSupport.emitStore(CgenSupport.T3, 3, CgenSupport.ACC, s); //load result into new int's value attr
     }
 
 
