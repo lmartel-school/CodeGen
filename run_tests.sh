@@ -2,8 +2,8 @@ make
 rm test/*.ref.s -f
 rm test/*.our.s -f
 mv test/*.cl .
-# FILES="*.cl"
-FILES="arith_custom.cl"
+FILES="*.cl"
+# FILES="arith_custom.cl"
 # FILES="simple_staticdispatch*.cl"
 for f in $FILES
 do
