@@ -177,6 +177,8 @@ cond
 dispatch with parameter
 neg
 loop
+block
+not
 
 TODO:
 figure out why case isn't binding the variable properly
