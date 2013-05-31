@@ -483,7 +483,8 @@ class method extends Feature {
 		context.emitUncountedPopR(CgenSupport.RA, s);
 		context.emitUncountedPopR(CgenSupport.SELF, s);
 		context.emitUncountedPopR(CgenSupport.FP, s);
-		CgenSupport.emitReturn(s);
+		CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 4 * formals.getLength(), s); //pop all params
+        CgenSupport.emitReturn(s);
 		context.exitScope();
 	}
 
@@ -1535,7 +1536,9 @@ class neg extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
         e1.code(s, context);
-        CgenSupport.emitNeg(CgenSupport.ACC, CgenSupport.ACC, s);
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        CgenSupport.emitNeg(CgenSupport.T1, CgenSupport.T1, s);
+        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s);
     }
 
 

@@ -163,3 +163,12 @@ Formal -> AbstractFormal
 
 
 We have to change these all back (easy using eclipse refactor), and delete the custom src files before submitting
+
+
+THINGS WE HAVE TESTED
+----------------------
+let (1 var w/init)
+eq
+leq
+lt
++/-

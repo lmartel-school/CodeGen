@@ -335,7 +335,7 @@ class Main inherits IO {
      (let z : A2I <- new A2I in
   {
      out_string(z.i2a(var.value()));
-     out_string(" ");
+     out_string(" ###");
   }
      )
    };
@@ -348,6 +348,7 @@ class Main inherits IO {
          -- avar <- (new A).set_var(get_int());
          out_string("number ");
          print(avar);
+         out_string("\n Checking is_even...\n");
          if is_even(avar.value()) then
             out_string("is even!\n")
          else
