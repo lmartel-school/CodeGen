@@ -3,7 +3,7 @@ rm test/*.ref.s -f
 rm test/*.our.s -f
 mv test/*.cl .
 # FILES="*.cl"
-FILES="simple_eq.cl"
+FILES="simple_comp.cl"
 for f in $FILES
 do
   echo "reference codegen: $f..."

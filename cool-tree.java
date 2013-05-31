@@ -1593,7 +1593,7 @@ class lt extends Expression {
         CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load Int VALUE for T1
         CgenSupport.emitLoad(CgenSupport.ACC, 3, CgenSupport.ACC, s); //load Int VALUE from ACC
 
-        CgenSupport.emitBlt(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
+        CgenSupport.emitBlt(CgenSupport.T1, CgenSupport.ACC, trueBranch, s);
 
         //return false, jump to end
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
@@ -1732,7 +1732,7 @@ class leq extends Expression {
         CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load Int VALUE for T1
         CgenSupport.emitLoad(CgenSupport.ACC, 3, CgenSupport.ACC, s); //load Int VALUE from ACC
 
-        CgenSupport.emitBleq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
+        CgenSupport.emitBleq(CgenSupport.T1, CgenSupport.ACC, trueBranch, s);
 
         //return false, jump to end
         CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s);
