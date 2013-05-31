@@ -756,7 +756,7 @@ class static_dispatch extends Expression {
 			((Expression)actual.getNth(i)).code(s, context);
 			// result of arg evaluation is an ACC, push onto stack
 			
-			context.emitPush(CgenSupport.ACC, s);
+			context.emitUncountedPush(CgenSupport.ACC, s);
 		}
 		//CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
 		//pass callingobject in ACC, but only after checking non-null!
@@ -1540,9 +1540,16 @@ class neg extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
         e1.code(s, context);
-        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        context.emitPush(CgenSupport.ACC, s);
+
+        new_ newInt = new new_(this.getLineNumber(), TreeConstants.Int);
+        newInt.code(s, context);
+
+        context.emitPopR(CgenSupport.T1, s);
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s);
         CgenSupport.emitNeg(CgenSupport.T1, CgenSupport.T1, s);
         CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s);
+
     }
 
 

@@ -184,11 +184,7 @@ class A2I {
   if i = 7 then "7" else
   if i = 8 then "8" else
   if i = 9 then "9" else
-  { 
-    (new IO).out_string("i2c aborting. value of i: ");
-    (new IO).out_int(i);
-    (new IO).out_string("\n");
-    abort(); ""; }  -- the "" is needed to satisfy the typchecker
+  { abort(); ""; }  -- the "" is needed to satisfy the typchecker
         fi fi fi fi fi fi fi fi fi fi
      };
 
@@ -200,13 +196,14 @@ long strings of digits produce strange answers because of arithmetic
 overflow.
 
 *)
-     a2i(s : String) : Int {
+     a2i(s : String) : Int {{
+        (new IO).out_string(s).out_string("\n ^^^s^^^ \n");
         if s.length() = 0 then 0 else
   if s.substr(0,1) = "-" then ~a2i_aux(s.substr(1,s.length()-1)) else
         if s.substr(0,1) = "+" then a2i_aux(s.substr(1,s.length()-1)) else
            a2i_aux(s)
-        fi fi fi
-     };
+        fi fi fi;
+     }};
 
 (* a2i_aux converts the usigned portion of the string.  As a
    programming example, this method is written iteratively.  *)
@@ -219,6 +216,7 @@ overflow.
             (let i : Int <- 0 in
         while i < j loop
       {
+          (new IO).out_string(s).out_string("\n ^^^s^^^ \n");
           int <- int * 10 + c2i(s.substr(i,1));
           i <- i + 1;
       }
@@ -361,9 +359,7 @@ class Main inherits IO {
                         a_var <- (new A).set_var(get_int());
                   avar <- (new B).method2(avar.value(), a_var.value());
                } else
-                  if char = "b" then {
-                      -- negate
-                     out_string("\n Beginning case...\n");
+                  if char = "b" then -- negate
                      case avar of
                      c : C => avar <- c.method6(c.value());
                      a : A => avar <- a.method3(a.value());
@@ -371,9 +367,7 @@ class Main inherits IO {
                       out_string("Oooops\n");
                       abort(); 0;
                    };
-                     esac;
-                     out_string("\n Survived case!!!\n"); 
-                  } else
+                     esac else
                   if char = "c" then -- diff
                      {
                         a_var <- (new A).set_var(get_int());
