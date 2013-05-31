@@ -167,7 +167,7 @@ We have to change these all back (easy using eclipse refactor), and delete the c
 
 THINGS WE HAVE TESTED
 ----------------------
-let (1 var w/init)
+let (1 var w/init; 4 vars, with and without init)
 eq
 leq
 lt
@@ -181,7 +181,8 @@ block
 not
 new (implicitly)
 isvoid
-let (4 vars, with and without init)
+let
+case
 
 TODO:
 figure out why case isn't binding the variable properly

@@ -838,7 +838,7 @@ class dispatch extends Expression {
 			((Expression)actual.getNth(i)).code(s, context);
 			// result of arg evaluation is an ACC, push onto stack
 			
-			context.emitPush(CgenSupport.ACC, s);
+			context.emitUncountedPush(CgenSupport.ACC, s);
 		}
 		//CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s);
 		//pass callingobject in ACC, but only after checking non-null!
