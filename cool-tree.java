@@ -413,7 +413,7 @@ class class_ extends AbstractClass {
 
 /** Defines AST constructor 'method'.
     <p>
-    See <a href="TreeNode.html">TreeNode</a> for full documentation. */
+    See <a href="TreeNode.html">TreeNode</a> for full documetnation. */
 class method extends Feature {
     public AbstractSymbol name;
     public Formals formals;
@@ -467,9 +467,9 @@ class method extends Feature {
 		}
 		context.resetSPOffsetFromFP(); //reset our SP tracker for a new AR
 		
-		context.emitPush(CgenSupport.FP, s);
-		context.emitPush(CgenSupport.SELF, s);
-		context.emitPush(CgenSupport.RA, s);
+		context.emitUncountedPush(CgenSupport.FP, s);
+		context.emitUncountedPush(CgenSupport.SELF, s);
+		context.emitUncountedPush(CgenSupport.RA, s);
 		
 		CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, s);
 		//set frame pointer, so formal params are easily accessible. 
@@ -480,9 +480,9 @@ class method extends Feature {
 		
 		expr.code(s, context);
 		
-		context.emitPopR(CgenSupport.RA, s);
-		context.emitPopR(CgenSupport.SELF, s);
-		context.emitPopR(CgenSupport.FP, s);
+		context.emitUncountedPopR(CgenSupport.RA, s);
+		context.emitUncountedPopR(CgenSupport.SELF, s);
+		context.emitUncountedPopR(CgenSupport.FP, s);
 		CgenSupport.emitReturn(s);
 		context.exitScope();
 	}
@@ -922,8 +922,10 @@ class cond extends Expression {
         int elseBranch = context.nextLabel();
         int endBranch = context.nextLabel();
         pred.code(s, context);
-        CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.falsebool, s);
-        CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, elseBranch, s);
+        //CgenSupport.emitLoadBool(CgenSupport.T1, BoolConst.falsebool, s);
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        CgenSupport.emitBeqz(CgenSupport.T1, elseBranch, s);
+        //CgenSupport.emitBeq(CgenSupport.ACC, CgenSupport.T1, elseBranch, s);
         //"then" (true) branch
         then_exp.code(s, context);
         CgenSupport.emitBranch(endBranch, s);
@@ -1587,7 +1589,10 @@ class lt extends Expression {
         e1.code(s, context);
         context.emitPush(CgenSupport.ACC, s);
         e2.code(s, context);
-        CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load Int object 1 into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load Int VALUE for T1
+        CgenSupport.emitLoad(CgenSupport.ACC, 3, CgenSupport.ACC, s); //load Int VALUE from ACC
+
         CgenSupport.emitBlt(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
 
         //return false, jump to end
@@ -1650,7 +1655,7 @@ class eq extends Expression {
         e1.code(s, context);
         context.emitPush(CgenSupport.ACC, s);
         e2.code(s, context);
-        CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s); //load e1 result
+        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load e1 result
         CgenSupport.emitMove(CgenSupport.T2, CgenSupport.ACC, s); //load e2 result
 
         //if pointers equal, return true immediately
@@ -1723,7 +1728,10 @@ class leq extends Expression {
         e1.code(s, context);
         context.emitPush(CgenSupport.ACC, s);
         e2.code(s, context);
-        CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+        CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s); //load Int object 1 into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load Int VALUE for T1
+        CgenSupport.emitLoad(CgenSupport.ACC, 3, CgenSupport.ACC, s); //load Int VALUE from ACC
+
         CgenSupport.emitBleq(CgenSupport.ACC, CgenSupport.T1, trueBranch, s);
 
         //return false, jump to end
@@ -1972,7 +1980,7 @@ class new_ extends Expression {
 			CgenSupport.emitLoad(CgenSupport.ACC, 0, CgenSupport.T1, s);
 			//copied object address in ACC, run Object.copy
 			CgenSupport.emitJal("Object.copy", s);
-			CgenSupport.emitLoad(CgenSupport.T1, 4, CgenSupport.SP, s);
+			CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.SP, s);
 			//T1 has address of proto_obj, add 4 for the address of init
 			CgenSupport.emitAddiu(CgenSupport.T1, CgenSupport.T1, 4, s);
 			CgenSupport.emitJalr(CgenSupport.T1, s);

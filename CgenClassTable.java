@@ -654,7 +654,7 @@ class CgenClassTable extends SymbolTable {
     }
 
     public int getSPOffsetFromFP(){
-      return SPOffsetFromFP;
+      return -SPOffsetFromFP;
     }
 
     //called when entering method
@@ -662,16 +662,29 @@ class CgenClassTable extends SymbolTable {
       SPOffsetFromFP = 1;
     }
 
-    public void emitPush(String reg, PrintStream s) {
-      SPOffsetFromFP++;
+    public void emitUncountedPush(String reg, PrintStream s){
       CgenSupport.emitStore(reg, 0, CgenSupport.SP, s);
       CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -4, s);
     }
 
-    public void emitPop(PrintStream s) {
-      SPOffsetFromFP--;
+    public void emitPush(String reg, PrintStream s) {
+      SPOffsetFromFP++;
+      emitUncountedPush(reg, s);
+    }
+
+    public void emitUncountedPop(PrintStream s) {
       if(SPOffsetFromFP < 1) Utilities.fatalError("too much popping!! CgenClassTable.emitPop()");
       CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 4, s);
+    }
+
+    public void emitPop(PrintStream s) {
+      SPOffsetFromFP--;
+      emitUncountedPop(s);
+    }
+
+    public void emitUncountedPopR(String destRegister, PrintStream s){
+      CgenSupport.emitLoad(destRegister, 1, CgenSupport.SP, s);
+      emitUncountedPop(s);
     }
 
     public void emitPopR(String destRegister, PrintStream s) {
