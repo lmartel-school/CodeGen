@@ -179,6 +179,9 @@ neg
 loop
 block
 not
+new (implicitly)
+isvoid
+let (4 vars, with and without init)
 
 TODO:
 figure out why case isn't binding the variable properly
